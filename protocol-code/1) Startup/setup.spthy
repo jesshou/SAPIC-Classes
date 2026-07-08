@@ -5,19 +5,15 @@ begin
  * SECTION: Start-up
  *
  * Bare-minimum: just Client, Server, and the top-level process block.
- * No key material, no Setup wrapper — plug in whatever key generation
- * you need (asymmetric, symmetric/PSK, or none) from
- * 02_key_establishment / 03_authentication directly into Client/Server
- * once you know what the protocol requires.
  */
 
 let Client(~id) =
     event ClientInit(~id);
-    0 // body continues in 01_negotiation / 05_handshake
+    0 
 
 let Server(~id) =
     event ServerInit(~id);
-    0 // body continues in 01_negotiation / 05_handshake
+    0 
 
 process:
 new ~clientId;
