@@ -1,0 +1,54 @@
+theory asymmetric_encryption
+begin
+
+builtins: asymmetric-encryption
+
+/*
+  The Client generates a fresh key k and transports it to the
+  Server confidentially by encrypting it under the Server's public key.
+  The Server recovers k by decrypting with its private key.
+*/
+
+let Client(skC, pkS) =
+  new k;
+  let message = aenc(k, pkS) in
+  out(message);
+  event SessKeyC(pkS, k)
+
+let Server(skS, pkS) =
+  in(request);
+  let key = adec(request, skS) in
+  event AnswerRequest(pkS, key)
+
+process:
+!(
+  new sks; out(pk(sks));
+  !(
+    new skc; out(pk(skc));
+      ( !Client(skc, pk(sks)) | (event LtkReveal(pk(skc)); out(pk(skc))) )
+    | ( !Server(sks, pk(sks)) | (event LtkReveal(pk(sks)); out(pk(sks))) )
+  )
+)
+
+lemma Client_session_key_secrecy:
+  " /* It cannot be that a client has set up a session key 'k' with a
+       server 'S', the adversary knows 'k', and no long-term key reveal
+       was performed on 'S'. This still holds using encryption alone:
+       k is only ever exposed via aenc(k,pkS), which requires skS to
+       invert. */
+    not(
+      Ex S k #i #j.
+        SessKeyC(S, k) @ #i
+        & K(k) @ #j
+        & not(Ex #r. LtkReveal(S) @ r)
+    )
+  "
+
+lemma Client_session_key_honest_setup:
+exists-trace
+  " Ex S k #i.
+      SessKeyC(S, k) @ #i
+      & not(Ex #r. LtkReveal(S) @ r)
+  "
+
+end
