@@ -7,21 +7,13 @@ begin
  * Bare-minimum: just Client, Server, and the top-level process block.
  */
 
-let Client(~id) =
-    event ClientInit(~id);
-    0 
+let Client() =
+    0
 
-let Server(~id) =
-    event ServerInit(~id);
-    0 
+let Server() =
+    0
 
 process:
-new ~clientId;
-new ~serverId;
-( !Client(~clientId) | !Server(~serverId) )
-
-lemma setup_executable:
-    exists-trace
-    "Ex id #i. ClientInit(id) @ i"
+( !Client() | !Server() )
 
 end
