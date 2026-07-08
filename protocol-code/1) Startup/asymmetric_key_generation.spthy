@@ -30,4 +30,8 @@ lemma setup_executable:
     exists-trace
     "Ex pk #i. ClientInit(pk) @ i"
 
+lemma server_setup_executable:
+    exists-trace
+    "Ex pk #i. ServerInit(pk) @ i"
+
 end

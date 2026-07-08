@@ -1,0 +1,12 @@
+theory symmetric_key_generation
+begin
+let Client() =
+    0
+
+let Server() =
+    0
+
+process:
+new ~psk;
+( !Client(~psk) | !Server(~psk) )
+end
