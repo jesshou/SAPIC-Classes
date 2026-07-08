@@ -1,0 +1,20 @@
+GENERAL SAPIC+ INSTRUCTIONS
+============================
+
+Where to declare `new` (keys and nonces)
+-----------------------------------------
+
+- `process:` block — value is SHARED between roles at runtime (e.g. a
+  common key both Client and Server need). Placed above both roles so
+  every instance uses the same value.
+
+    process:
+    !( new k; ( !Client(k) | !Server(k) ) )
+
+- Inside a role's `let` block — value is PRIVATE to that one role (e.g. a
+  long-term key). The other role never sees it directly.
+
+    let Client() = new ~ltkA; let pkA = pk(~ltkA) in ...
+
+Rule of thumb: shared secret -> `new` in `process:`; one role's own secret
+-> `new` inside that role's `let` block.
