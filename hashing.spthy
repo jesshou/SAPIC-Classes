@@ -12,8 +12,8 @@ builtins: hashing
 
 let Client(k) =
   in(cipher);
-  let h(=k) = cipher in
-  event SessKeyC(k)
+  if h(k) = cipher then
+    event SessKeyC(k)
 
 let Server(k) =
   event AnswerRequest(k);
