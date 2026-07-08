@@ -1,0 +1,33 @@
+theory asymmetric_key_generation
+begin
+
+builtins: asymmetric-encryption
+
+/*
+ * SECTION: Start-up
+ *
+ * Bare-minimum:
+ * Client and Server each generate a long-term asymmetric key pair and
+ * learn each other's public key.
+ */
+
+let Client() =
+    new ~ltkA;
+    let pkA = pk(~ltkA) in
+    event ClientInit(pkA);
+    0
+
+let Server() =
+    new ~ltkB;
+    let pkB = pk(~ltkB) in
+    event ServerInit(pkB);
+    0
+
+process:
+( !Client() | !Server() )
+
+lemma setup_executable:
+    exists-trace
+    "Ex pk #i. ClientInit(pk) @ i"
+
+end
