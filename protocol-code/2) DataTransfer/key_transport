@@ -1,0 +1,23 @@
+theory key_transport
+begin
+
+builtins: asymmetric-encryption
+let Client() =
+    in(pkS);
+    new k;
+    event ClientKey(k);
+    out(aenc(k, pkS))
+let Server() =
+    new ltkS;
+    out(pk(ltkS));
+    in(cipher);
+    let k = adec(cipher, ltkS) in
+    event ServerKey(k)
+process:
+( !Client() | !Server() )
+
+lemma exists_trace:
+exists-trace
+"Ex k #i #j. ClientKey(k) @ i & ServerKey(k) @ j"
+
+end
