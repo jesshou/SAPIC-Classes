@@ -1,22 +1,21 @@
-theory client_hello
+theory ClientHello
 begin
 
 /* ===== Client ===== */
 let Client =
     new cr;                                  // client random (nonce)
     event Create_ClientHello(cr);            // mark creation of the Client Hello
-    out(c, <'client_hello', cr>);            // send it on the channel
-    0
+    out(c, cr);            // send ClientHello
+    
 
 /* ===== Server ===== */
 let Server =
-    in(c, <'client_hello', cr>);              // receive the Client Hello
+    in(c, cr);              // receive the Client Hello
     event Receive_ClientHello(cr);
-    0
+    
 
 /* ===== Main process ===== */
 process:
-    new c;                                    // shared communication channel
-    ( !Client | !Server )
+      ( !Client | !Server )
 
 end

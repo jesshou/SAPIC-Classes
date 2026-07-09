@@ -1,0 +1,16 @@
+theory ServerHello
+begin
+
+let Server =
+    new sr;
+    event Create_ServerHello(sr);
+    out(c, sr)
+
+let Client =
+    in(c, x);
+    event Receive_ServerHello(x)
+
+process:
+    ( !Server ) | ( !Client )
+
+end
