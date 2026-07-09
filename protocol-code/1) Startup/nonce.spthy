@@ -1,27 +1,12 @@
 theory nonce
 begin
 
-/*
- * SECTION: Start-up
- *
- * A role generates a fresh nonce with `new n`.
- *
- * A nonce is a one-time, unpredictable value used for its
- * cryptographic properties - e.g. to prevent replay attacks or prove
- * freshness of a response. It is typically consumed inside a crypto
- * operation (hashed, encrypted, signed) rather than used as a label.
- *
- * NOTE: where you place the `new n` matters - see
- * "general_SAPIC+_instruction" for guidance. In short: put it inside
- * a role's `let` block if only that role should hold the nonce, or
- * in the top-level `process:` block if it must be shared between
- * roles at runtime.
- */
-
+/* ===== Client ===== */
 let Client() =
-    new n;
-    event ClientNonce(n);
+    new n;                    // fresh, unpredictable nonce - proves freshness / prevents replay
+    event ClientNonce(n);    
     0
+    // NOTE: placement of `new n` matters - see "general_SAPIC+_instruction".
 
 process:
 ( !Client() )

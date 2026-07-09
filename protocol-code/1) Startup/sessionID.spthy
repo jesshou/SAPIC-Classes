@@ -1,29 +1,12 @@
 theory sessionID
 begin
 
-/*
- * SECTION: Start-up
- *
- * A role generates a fresh session identifier with
- * `new cid`.
- *
- * A session ID is a bookkeeping/correlation label, not a
- * cryptographic value - it ties together events from the same
- * protocol run (useful once a role is spawned many times via `!`),
- * rather than guarding against replay itself.
- *
- * NOTE: where you place the `new cid` matters - see
- * "general_SAPIC+_instruction" for guidance. In short: put it inside
- * a role's `let` block if only that role should hold the session ID,
- * or in the top-level `process:` block if it must be shared between
- * roles at runtime (e.g. both Client and Server tag their events
- * with the same session ID).
- */
-
+/* ===== Client ===== */
 let Client() =
-    new cid;
-    event ClientSessionID(cid);
+    new cid;                   // fresh session ID - a bookkeeping/correlation label, not a cryptographic value
+    event ClientSessionID(cid); 
     0
+    // NOTE: placement of `new cid` matters - see "general_SAPIC+_instruction".
 
 process:
 ( !Client() )
