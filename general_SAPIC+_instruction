@@ -1,32 +1,45 @@
 # GENERAL SAPIC+ INSTRUCTIONS
 
-## Where to declare `new` (keys and nonces)
+## `new`: process block vs role's `let` block
 
-- `process:` block — value is SHARED between roles at runtime (e.g. a
-  common key both Client and Server need). Placed above both roles so
-  every instance uses the same value.
+- `process:` block → value SHARED across roles/instances. Place above
+  both roles. Used for: common keys, channel names.
 
-  process:
-  !( new k; ( !Client(k) | !Server(k) ) )
+      process:
+      !( new k; ( !Client(k) | !Server(k) ) )
 
-- Inside a role's `let` block — value is PRIVATE to that one role (e.g. a
-  long-term key). The other role never sees it directly.
+- Inside a role's `let` → value PRIVATE to that role only. Used for:
+  long-term keys.
 
-  let Client() = new ~ltkA; let pkA = pk(~ltkA) in ...
+      let Client() = new ~ltkA; let pkA = pk(~ltkA) in ...
 
-Rule of thumb: shared secret -> `new` in `process:`; one role's own secret
--> `new` inside that role's `let` block.
+## Channels
+
+A channel is just the first argument to `in(...)`/`out(...)` — declare
+it with `new` in `process:` (same SHARED rule as above) so all roles
+reference the same name:
+
+    let Client = new cr; out(c, <'client_hello', cr>)
+    let Server = in(c, <'client_hello', cr>)
+
+    process:
+        new c;                    // shared channel
+        ( !Client | !Server )
+
+Undeclared name (no `new`) → free/public constant, adversary knows it
+from the start. Fine for a plain public channel. Use `new` only when
+the channel name itself must be unknown to the adversary at creation
+(private/authentic channel).
 
 ## Freshness
 
-`new` always yields a value that is globally unique and unknown to the
-adversary at creation. Nonces, session IDs, and ephemeral keys are all
-just `new` values - same guarantee, different use:
+`new` = globally unique, adversary-unknown at creation. Nonces,
+session IDs, ephemeral keys are all just `new` values — same
+guarantee, different role:
 
-    - Nonce      - proves a message isn't a replay.
-    - Session ID - labels/distinguishes concurrent runs.
-    - Ephemeral key - scopes a key to one session (forward secrecy).
+- Nonce — anti-replay
+- Session ID — labels/distinguishes concurrent runs
+- Ephemeral key — scopes key to one session (forward secrecy)
 
-`~` marks a variable as fresh-sorted (e.g. `~n`, `~ltkA`, `~ek`) - use
-it on any variable bound to a `new`, so Tamarin knows it carries the
-freshness guarantee above.
+`~` marks fresh-sorted variables (`~n`, `~ltkA`, `~ek`) — use on any
+variable bound to `new`.
