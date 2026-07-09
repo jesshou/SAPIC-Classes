@@ -29,4 +29,11 @@ let Client =
 process:
     ( !Server | !Client )
 
+
+/* exists trace lemma */
+lemma key_agreement_exists:
+exists-trace
+"Ex pkS pkC k #i #j.
+    ServerKey(pkS, pkC, k) @ i  & ClientKey(pkC, pkS, k) @ j"
+
 end
