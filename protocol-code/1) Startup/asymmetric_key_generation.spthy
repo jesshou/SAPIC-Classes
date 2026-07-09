@@ -3,14 +3,6 @@ begin
 
 builtins: asymmetric-encryption
 
-/*
- * SECTION: Start-up
- *
- * Bare-minimum:
- * Client and Server each generate a long-term asymmetric key pair and
- * learn each other's public key.
- */
-
 let Client() =
     new ~ltkA;
     let pkA = pk(~ltkA) in

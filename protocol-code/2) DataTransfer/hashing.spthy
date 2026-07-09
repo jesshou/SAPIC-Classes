@@ -3,13 +3,6 @@ begin
 
 builtins: hashing
 
-/*
-  Client and Server share a secret key k, established out-of-band
-  (abstracted here by scoping 'new k' over both roles). The Server
-  proves it possesses k by sending h(k), and the Client checks the
-  hash to confirm the Server is "alive" and holds the right key.
-*/
-
 let Client(k) =
   in(cipher);
   if h(k) = cipher then
@@ -28,11 +21,6 @@ process:
 )
 
 lemma Client_auth:
-  " /* For every session key k a client accepts (i.e. whose hash
-       verified), either the server actually ran and hashed k, or
-       k was revealed beforehand. This is exactly the guarantee the
-       hash confirmation provides: the client only accepts after
-       seeing a valid h(k). */
     All k #i. SessKeyC(k) @ #i
       ==>
        ( (Ex #a. AnswerRequest(k) @ a)

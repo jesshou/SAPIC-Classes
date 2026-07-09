@@ -3,12 +3,6 @@ begin
 
 builtins: asymmetric-encryption
 
-/*
-  The Client generates a fresh key k and transports it to the
-  Server confidentially by encrypting it under the Server's public key.
-  The Server recovers k by decrypting with its private key.
-*/
-
 let Client(skC, pkS) =
   new k;
   let message = aenc(k, pkS) in
@@ -31,11 +25,6 @@ process:
 )
 
 lemma Client_session_key_secrecy:
-  " /* It cannot be that a client has set up a session key 'k' with a
-       server 'S', the adversary knows 'k', and no long-term key reveal
-       was performed on 'S'. This still holds using encryption alone:
-       k is only ever exposed via aenc(k,pkS), which requires skS to
-       invert. */
     not(
       Ex S k #i #j.
         SessKeyC(S, k) @ #i

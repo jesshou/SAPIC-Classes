@@ -1,12 +1,6 @@
 theory setup
 begin
 
-/*
- * SECTION: Start-up
- *
- * Bare-minimum: just Client, Server, and the top-level process block.
- */
-
 let Client() =
     0
 
