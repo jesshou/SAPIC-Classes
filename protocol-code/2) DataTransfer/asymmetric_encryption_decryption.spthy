@@ -1,4 +1,4 @@
-theory asymmetric_encryption
+theory asymmetric_encryption_decryption.spthy
 begin
 
 builtins: asymmetric-encryption
