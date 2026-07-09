@@ -1,0 +1,26 @@
+theory symmetric_encryption_decryption
+begin
+
+builtins: symmetric-encryption
+
+let Client(k) =
+    new m;
+    event ClientSent(m);
+    out(senc(m, k))
+
+let Server(k) =
+    in(xenc);
+    let m = sdec(xenc, k) in
+    event ServerReceived(m)
+
+process:
+new k;
+( !Client(k) | !Server(k) )
+
+/* exists trace lemma */
+lemma decryption_exists:
+exists-trace
+"Ex m #i #j.
+    ClientSent(m) @ i & ServerReceived(m) @ j"
+
+end

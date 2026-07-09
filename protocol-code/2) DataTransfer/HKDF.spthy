@@ -1,4 +1,4 @@
-theory HKDF_Protocol
+theory HKDF
 begin
 
 /*
