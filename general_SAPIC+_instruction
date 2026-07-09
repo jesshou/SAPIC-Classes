@@ -1,20 +1,32 @@
-GENERAL SAPIC+ INSTRUCTIONS
-============================
+# GENERAL SAPIC+ INSTRUCTIONS
 
-Where to declare `new` (keys and nonces)
------------------------------------------
+## Where to declare `new` (keys and nonces)
 
 - `process:` block — value is SHARED between roles at runtime (e.g. a
   common key both Client and Server need). Placed above both roles so
   every instance uses the same value.
 
-    process:
-    !( new k; ( !Client(k) | !Server(k) ) )
+  process:
+  !( new k; ( !Client(k) | !Server(k) ) )
 
 - Inside a role's `let` block — value is PRIVATE to that one role (e.g. a
   long-term key). The other role never sees it directly.
 
-    let Client() = new ~ltkA; let pkA = pk(~ltkA) in ...
+  let Client() = new ~ltkA; let pkA = pk(~ltkA) in ...
 
 Rule of thumb: shared secret -> `new` in `process:`; one role's own secret
 -> `new` inside that role's `let` block.
+
+## Freshness
+
+`new` always yields a value that is globally unique and unknown to the
+adversary at creation. Nonces, session IDs, and ephemeral keys are all
+just `new` values - same guarantee, different use:
+
+    - Nonce      - proves a message isn't a replay.
+    - Session ID - labels/distinguishes concurrent runs.
+    - Ephemeral key - scopes a key to one session (forward secrecy).
+
+`~` marks a variable as fresh-sorted (e.g. `~n`, `~ltkA`, `~ek`) - use
+it on any variable bound to a `new`, so Tamarin knows it carries the
+freshness guarantee above.
