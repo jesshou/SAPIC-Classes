@@ -1,0 +1,49 @@
+theory diffie_hellman_ephemeral
+begin
+
+builtins: diffie-hellman
+
+let Client() =
+    new x;
+    let gx = 'g'^x in
+    event ClientSentGX(gx);
+    out(gx);
+    in(gy);
+    event ClientRecvGY(gy);
+    let k = gy^x in
+    event SessKey('Client', gx, gy, k)
+
+let Server() =
+    new y;
+    let gy = 'g'^y in
+    event ServerSentGY(gy);
+    out(gy);
+    in(gx);
+    event ServerRecvGX(gx);
+    let k = gx^y in
+    event SessKey('Server', gx, gy, k)
+
+process:
+( !Client() | !Server() )
+
+lemma server_received_client_key:
+  exists-trace
+  "Ex gx #i #j.
+      ServerRecvGX(gx) @ #i
+      & ClientSentGX(gx) @ #j
+      & #j < #i"
+
+lemma client_received_server_key:
+  exists-trace
+  "Ex gy #i #j.
+      ClientRecvGY(gy) @ #i
+      & ServerSentGY(gy) @ #j
+      & #j < #i"
+
+lemma keys_match:
+  "All gx gy k1 k2 #i #j.
+      SessKey('Client', gx, gy, k1) @ #i &
+      SessKey('Server', gx, gy, k2) @ #j
+      ==> k1 = k2"
+
+end

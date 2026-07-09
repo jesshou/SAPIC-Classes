@@ -1,16 +1,20 @@
-theory ServerHello
+theory server_hello
 begin
 
 let Server =
     new sr;
     event Create_ServerHello(sr);
-    out(c, sr)
+    out(sr)
 
 let Client =
-    in(c, x);
-    event Receive_ServerHello(x)
+    in(x);
+    event ClientReceivedHello(x)
 
 process:
     ( !Server ) | ( !Client )
+
+lemma exists_ServerHello:
+exists-trace
+  " Ex x #i. ClientReceivedHello(x) @ i "
 
 end

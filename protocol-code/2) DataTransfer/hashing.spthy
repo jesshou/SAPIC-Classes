@@ -21,6 +21,7 @@ process:
 )
 
 lemma Client_auth:
+"
     All k #i. SessKeyC(k) @ #i
       ==>
        ( (Ex #a. AnswerRequest(k) @ a)

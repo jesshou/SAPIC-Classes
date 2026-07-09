@@ -1,0 +1,32 @@
+theory diffie_hellman_static
+begin
+
+builtins: diffie-hellman
+
+/* ----------------------- Server ----------------------- */
+let Server =
+    new skS;                       // long-term static secret exponent
+    let pkS = 'g'^skS in
+    out(pkS);                      // publish static public key
+    !(
+        in(pkC);                   // receive client's static public key
+        let k = pkC^skS in         // k = g^(skC*skS)
+        event ServerKey(pkS, pkC, k)
+    )
+
+/* ----------------------- Client ----------------------- */
+let Client =
+    new skC;                       // long-term static secret exponent
+    let pkC = 'g'^skC in
+    out(pkC);                      // publish static public key
+    !(
+        in(pkS);                   // receive server's static public key
+        let k = pkS^skC in         // k = g^(skS*skC)
+        event ClientKey(pkC, pkS, k)
+    )
+
+/* ----------------------- Process ----------------------- */
+process:
+    ( !Server | !Client )
+
+end

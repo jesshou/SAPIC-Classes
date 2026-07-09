@@ -25,6 +25,7 @@ process:
 )
 
 lemma Client_session_key_secrecy:
+"
     not(
       Ex S k #i #j.
         SessKeyC(S, k) @ #i
