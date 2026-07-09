@@ -1,0 +1,24 @@
+theory signature_generation_verification
+begin
+
+builtins: signing
+
+let Server() =
+    new sk;
+    new m;
+    event ServerSign(pk(sk), m);
+    out(<pk(sk), m, sign(m, sk)>)
+
+let Client() =
+    in(<pkS, m, sig>);
+    if verify(sig, m, pkS) = true then
+        event ClientVerify(pkS, m)
+    else
+        0
+
+process:
+( !Client() | !Server() )
+
+lemma client_verify_exists: exists-trace "Ex pkS m #i. ClientVerify(pkS, m) @ #i" 
+
+end
