@@ -1,0 +1,78 @@
+theory HKDF_Protocol
+begin
+
+/*
+ * SAPIC+ model of a protocol that uses HKDF (RFC 5869,
+ * https://datatracker.ietf.org/doc/html/rfc5869) to derive a session key.
+ *
+ * Key material:
+ *   - an ephemeral Diffie-Hellman exchange gives the shared secret Z
+ *     (-> forward secrecy)
+ *   - a long-term pre-shared key ~psk gives implicit authentication
+ *     (-> resistance to an active MitM on the unauthenticated DH shares)
+ *   - Z and ~psk are combined into IKM, the Input Keying Material fed to HKDF
+ *
+ * HKDF (RFC 5869, Section 2) is modelled abstractly with two free function
+ * symbols, exactly the way the built-in "hashing" theory models h/1:
+ *
+ *   hkdf_extract(salt, IKM)   = PRK   -- Section 2.2, HKDF-Extract
+ *   hkdf_expand(PRK, info, L) = OKM   -- Section 2.3, HKDF-Expand
+ *
+ * No equations are attached to either symbol: they are public, deterministic
+ * functions with no algebraic relation to their inputs/outputs, which is the
+ * standard symbolic abstraction of an HMAC-based PRF (one-wayness and
+ * pseudorandomness, not invertibility). The internal T(1..N) chaining that
+ * HKDF-Expand performs internally is not unrolled; L is kept as a symbolic
+ * tag for the requested output length.
+ */
+
+builtins: diffie-hellman, hashing, symmetric-encryption
+
+functions:
+    hkdf_extract/2,   // HKDF-Extract(salt, IKM) -> PRK
+    hkdf_expand/3     // HKDF-Expand(PRK, info, L) -> OKM
+
+let Client(~psk) =
+    new ~x;
+    let gx = 'g'^~x in
+    out(gx);
+    in(gy);
+    let Z    = gy^~x in
+    let salt = h(<gx, gy>) in
+    let IKM  = <Z, ~psk> in
+    let PRK  = hkdf_extract(salt, IKM) in
+    let OKM  = hkdf_expand(PRK, 'session-key', '32') in
+    event SessionKey('Client', OKM);
+    new ~msg;
+    event Secret(~msg);
+    out(senc(~msg, OKM));
+    0
+
+let Server(~psk) =
+    in(gx);
+    new ~y;
+    let gy = 'g'^~y in
+    out(gy);
+    let Z    = gx^~y in
+    let salt = h(<gx, gy>) in
+    let IKM  = <Z, ~psk> in
+    let PRK  = hkdf_extract(salt, IKM) in
+    let OKM  = hkdf_expand(PRK, 'session-key', '32') in
+    event SessionKey('Server', OKM);
+    in(c);
+    let m = sdec(c, OKM) in
+    event Received(m);
+    0
+
+lemma executability:
+    exists-trace
+    "Ex m #i #j. Secret(m)@i & Received(m)@j & #i < #j"
+
+lemma secrecy_OKM:
+    "All role k #i. SessionKey(role, k)@i ==> not (Ex #j. K(k)@j)"
+
+process:
+    new ~psk;
+    ( !Client(~psk) | !Server(~psk) )
+
+end
