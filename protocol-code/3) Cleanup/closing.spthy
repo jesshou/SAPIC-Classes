@@ -1,0 +1,11 @@
+theory ClientServer
+begin
+
+
+let Client() = 0
+let Server() = 0
+
+process:
+( !Client() | !Server() )
+
+end

@@ -1,0 +1,28 @@
+theory application_data_exchange
+begin
+
+builtins: symmetric-encryption
+
+let Client(k) =
+    new m;
+    // event Send('Client', 'Server', m);
+    out(senc(m, k));
+    in(xenc);
+    let m2 = sdec(xenc, k) in
+    // event Recv('Client', 'Server', m2);
+    0
+
+let Server(k) =
+    in(xenc);
+    let m = sdec(xenc, k) in
+    // event Recv('Server', 'Client', m);
+    new r;
+    // event Send('Server', 'Client', r);
+    out(senc(r, k));
+    0
+
+process:
+new k;
+( !Client(k) | !Server(k) )
+
+end

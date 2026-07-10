@@ -1,0 +1,33 @@
+theory handshake_finished
+begin
+
+builtins: diffie-hellman, hashing
+
+let Client() =
+    new x;
+    out(<'c1', 'g'^x>);
+    in(<'s1', Y>);
+    let k = Y^x in
+    event ClientDerivedKey(k);
+    let finC = h(<'finished_client', k>) in
+    out(<'c2', finC>);
+    in(<'s2', finS>);
+    if finS = h(<'finished_server', k>) then
+    event ClientAccept(k)
+
+let Server() =
+    new y;
+    in(<'c1', X>);
+    out(<'s1', 'g'^y>);
+    let k = X^y in
+    event ServerDerivedKey(k);
+    in(<'c2', finC>);
+    if finC = h(<'finished_client', k>) then
+    let finS = h(<'finished_server', k>) in
+    out(<'s2', finS>);
+    event ServerAccept(k)
+
+process:
+( !Client() | !Server() )
+
+end
