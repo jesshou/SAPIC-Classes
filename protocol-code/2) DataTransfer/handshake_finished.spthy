@@ -8,30 +8,36 @@ begin
 builtins: diffie-hellman, hashing
 
 let Client() =
-    new x;                                          // ephemeral DH secret
-    out(<'c1', 'g'^x>);                              // tag 'c1' = client's DH share
-    in(<'s1', Y>);                                   // tag 's1' = server's DH share
-    let k = Y^x in                                   // shared DH secret
-    event ClientDerivedKey(k);
-    let finC = h(<'finished_client', k>) in          // key-confirmation MAC, tagged by role
+    new eKc;                                          // ephemeral DH secret
+    out(<'c1', 'g'^eKc>);                              // tag 'c1' = client's DH share
+    in(<'s1', ePKs>);                                  // tag 's1' = server's DH share
+    let dhZ = ePKs^eKc in                              // shared DH secret
+    event ClientDerivedKey(dhZ);
+    let finC = h(<'finished_client', dhZ>) in          // key-confirmation MAC, tagged by role
     out(<'c2', finC>);
     in(<'s2', finS>);
-    if finS = h(<'finished_server', k>) then         // verify server also derived k
-    event ClientAccept(k)
+    if finS = h(<'finished_server', dhZ>) then         // verify server also derived dhZ
+    event ClientAccept(dhZ)
 
 let Server() =
-    new y;                                           // ephemeral DH secret
-    in(<'c1', X>);                                   // tag 'c1' = client's DH share
-    out(<'s1', 'g'^y>);                               // tag 's1' = server's DH share
-    let k = X^y in                                   // shared DH secret
-    event ServerDerivedKey(k);
+    new eKs;                                           // ephemeral DH secret
+    in(<'c1', ePKc>);                                  // tag 'c1' = client's DH share
+    out(<'s1', 'g'^eKs>);                               // tag 's1' = server's DH share
+    let dhZ = ePKc^eKs in                              // shared DH secret
+    event ServerDerivedKey(dhZ);
     in(<'c2', finC>);
-    if finC = h(<'finished_client', k>) then         // verify client also derived k
-    let finS = h(<'finished_server', k>) in          // key-confirmation MAC, tagged by role
+    if finC = h(<'finished_client', dhZ>) then         // verify client also derived dhZ
+    let finS = h(<'finished_server', dhZ>) in          // key-confirmation MAC, tagged by role
     out(<'s2', finS>);
-    event ServerAccept(k)
+    event ServerAccept(dhZ)
 
 process:
 ( !Client() | !Server() )
+
+lemma executable:
+  exists-trace
+  "Ex z #i #j.
+       ClientAccept(z) @ #i
+     & ServerAccept(z) @ #j"
 
 end

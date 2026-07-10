@@ -5,19 +5,19 @@ begin
 
 builtins: symmetric-encryption
 
-let Client(k) =
+let Client(psk) =
     new m;                    // message to send
     event ClientSent(m);
-    out(senc(m, k))
+    out(senc(m, psk))
 
-let Server(k) =
-    in(xenc);
-    let m = sdec(xenc, k) in  // decrypt with the shared key
+let Server(psk) =
+    in(xencC);
+    let m = sdec(xencC, psk) in  // decrypt with the shared key
     event ServerReceived(m)
 
 process:
-new k;                        // shared symmetric key, generated once
-( !Client(k) | !Server(k) )
+new psk;                        // shared symmetric key, generated once
+( !Client(psk) | !Server(psk) )
 
 lemma decryption_exists:
 exists-trace

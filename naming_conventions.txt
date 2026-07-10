@@ -1,0 +1,46 @@
+Variable Naming Conventions - SAPIC-Classes protocol-code
+===========================================================
+
+Role suffixes: c = Client, s = Server
+
+Asymmetric keys
+----------------
+Client public key              pKc
+Server public key              pKs
+Client long-term private key   ltKc
+Server long-term private key   ltKs
+
+Symmetric keys
+----------------
+Shared symmetric key (PSK / session key used directly for enc/dec)   psk
+
+Diffie-Hellman
+----------------
+Client ephemeral secret exponent    eKc
+Server ephemeral secret exponent    eKs
+Client ephemeral public share       ePKc   (was g^x)
+Server ephemeral public share       ePKs   (was g^y)
+Derived shared DH secret            dhZ
+Static (long-term) DH keys          fold into pKc / pKs / ltKc / ltKs
+
+Nonces
+----------------
+Nonce   n
+
+Messages
+----------------
+Message (single direction per file)         m
+Client's message (both directions in file)  mC
+Server's message (both directions in file)  mS
+
+Ciphertext
+----------------
+Ciphertext sent by Client   xencC
+Ciphertext sent by Server   xencS
+
+Notes / exceptions
+----------------
+- HKDF.spthy: PRK and OKM are left as-is (RFC 5869 terminology for the
+  extract/expand output), distinct from psk (the long-term input secret).
+- hashing.spthy: the received hash digest is named H (not part of the
+  xenc family, since it's a hash output, not a ciphertext).

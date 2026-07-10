@@ -7,23 +7,23 @@ begin
 builtins: asymmetric-encryption
 
 let Client() =
-    in(pkS);                          // receive Server's public key
-    new k;                            // session key to transport
-    event ClientKey(k);
-    out(aenc(k, pkS))                 // encrypt key under Server's public key
+    in(pKs);                          // receive Server's public key
+    new psk;                          // session key to transport
+    event ClientKey(psk);
+    out(aenc(psk, pKs))               // encrypt key under Server's public key
 
 let Server() =
-    new ltkS;                         // long-term secret key
-    out(pk(ltkS));                    // publish matching public key
-    in(cipher);
-    let k = adec(cipher, ltkS) in     // decrypt with private key
-    event ServerKey(k)
+    new ltKs;                         // long-term secret key
+    out(pk(ltKs));                    // publish matching public key
+    in(xencC);
+    let psk = adec(xencC, ltKs) in    // decrypt with private key
+    event ServerKey(psk)
 
 process:
 ( !Client() | !Server() )
 
 lemma exists_trace:
 exists-trace
-"Ex k #i #j. ClientKey(k) @ i & ServerKey(k) @ j"
+"Ex psk #i #j. ClientKey(psk) @ i & ServerKey(psk) @ j"
 
 end

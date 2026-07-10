@@ -6,46 +6,46 @@ begin
 builtins: diffie-hellman
 
 let Client() =
-    new x;                            // ephemeral secret exponent, generated fresh each run
-    let gx = 'g'^x in                 // Client's ephemeral public share
-    event ClientSentGX(gx);
-    out(gx);
-    in(gy);
-    event ClientRecvGY(gy);
-    let k = gy^x in                   // shared secret = g^(x*y)
-    event SessKey('Client', gx, gy, k)  // feeds keys_match lemma
+    new eKc;                            // ephemeral secret exponent, generated fresh each run
+    let ePKc = 'g'^eKc in               // Client's ephemeral public share
+    event ClientSentGX(ePKc);
+    out(ePKc);
+    in(ePKs);
+    event ClientRecvGY(ePKs);
+    let dhZ = ePKs^eKc in                // shared secret = g^(eKc*eKs)
+    event SessKey('Client', ePKc, ePKs, dhZ)  // feeds keys_match lemma
 
 let Server() =
-    new y;                            // ephemeral secret exponent, generated fresh each run
-    let gy = 'g'^y in                 // Server's ephemeral public share
-    event ServerSentGY(gy);
-    out(gy);
-    in(gx);
-    event ServerRecvGX(gx);
-    let k = gx^y in                   // shared secret = g^(x*y)
-    event SessKey('Server', gx, gy, k)  // feeds keys_match lemma
+    new eKs;                            // ephemeral secret exponent, generated fresh each run
+    let ePKs = 'g'^eKs in               // Server's ephemeral public share
+    event ServerSentGY(ePKs);
+    out(ePKs);
+    in(ePKc);
+    event ServerRecvGX(ePKc);
+    let dhZ = ePKc^eKs in                // shared secret = g^(eKc*eKs)
+    event SessKey('Server', ePKc, ePKs, dhZ)  // feeds keys_match lemma
 
 process:
 ( !Client() | !Server() )
 
 lemma server_received_client_key:
   exists-trace
-  "Ex gx #i #j.
-      ServerRecvGX(gx) @ #i
-      & ClientSentGX(gx) @ #j
+  "Ex ePKc #i #j.
+      ServerRecvGX(ePKc) @ #i
+      & ClientSentGX(ePKc) @ #j
       & #j < #i"
 
 lemma client_received_server_key:
   exists-trace
-  "Ex gy #i #j.
-      ClientRecvGY(gy) @ #i
-      & ServerSentGY(gy) @ #j
+  "Ex ePKs #i #j.
+      ClientRecvGY(ePKs) @ #i
+      & ServerSentGY(ePKs) @ #j
       & #j < #i"
 
 lemma keys_match:
-  "All gx gy k1 k2 #i #j.
-      SessKey('Client', gx, gy, k1) @ #i &
-      SessKey('Server', gx, gy, k2) @ #j
-      ==> k1 = k2"
+  "All ePKc ePKs dhZ1 dhZ2 #i #j.
+      SessKey('Client', ePKc, ePKs, dhZ1) @ #i &
+      SessKey('Server', ePKc, ePKs, dhZ2) @ #j
+      ==> dhZ1 = dhZ2"
 
 end

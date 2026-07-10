@@ -6,15 +6,15 @@ begin
 builtins: asymmetric-encryption
 
 let Client() =
-    new ~ltkA;                  // fresh long-term secret key (~ = never leaves this role)
-    let pkA = pk(~ltkA) in       // derive matching public key
-    event ClientInit(pkA);       // record keypair creation for executability lemma
+    new ~ltKc;                  // fresh long-term secret key (~ = never leaves this role)
+    let pKc = pk(~ltKc) in       // derive matching public key
+    event ClientInit(pKc);       // record keypair creation for executability lemma
     0
 
 let Server() =
-    new ~ltkB;                  // fresh long-term secret key (~ = never leaves this role)
-    let pkB = pk(~ltkB) in       // derive matching public key
-    event ServerInit(pkB);       // record keypair creation for executability lemma
+    new ~ltKs;                  // fresh long-term secret key (~ = never leaves this role)
+    let pKs = pk(~ltKs) in       // derive matching public key
+    event ServerInit(pKs);       // record keypair creation for executability lemma
     0
 
 process:
@@ -22,10 +22,10 @@ process:
 
 lemma setup_executable:
     exists-trace
-    "Ex pk #i. ClientInit(pk) @ i"
+    "Ex pKc #i. ClientInit(pKc) @ i"
 
 lemma server_setup_executable:
     exists-trace
-    "Ex pk #i. ServerInit(pk) @ i"
+    "Ex pKs #i. ServerInit(pKs) @ i"
 
 end

@@ -1,7 +1,7 @@
 theory HKDF
 begin
 
-/* Session key derived via HKDF (RFC 5869) from an ephemeral DH secret Z
+/* Session key derived via HKDF (RFC 5869) from an ephemeral DH secret dhZ
    (forward secrecy) combined with a long-term PSK (implicit auth).
    hkdf_extract/hkdf_expand are free functions - an abstract, unopinionated
    stand-in for the real HMAC-based extract/expand steps. */
@@ -13,34 +13,34 @@ functions:
     hkdf_expand/3     // HKDF-Expand(PRK, info, L) -> OKM
 
 let Client(~psk) =
-    new ~x;
-    let gx = 'g'^~x in
-    out(gx);
-    in(gy);
-    let Z    = gy^~x in
-    let salt = h(<gx, gy>) in
-    let IKM  = <Z, ~psk> in
+    new ~eKc;
+    let ePKc = 'g'^~eKc in
+    out(ePKc);
+    in(ePKs);
+    let dhZ  = ePKs^~eKc in
+    let salt = h(<ePKc, ePKs>) in
+    let IKM  = <dhZ, ~psk> in
     let PRK  = hkdf_extract(salt, IKM) in
     let OKM  = hkdf_expand(PRK, 'session-key', '32') in
     event SessionKey('Client', OKM);   // feeds secrecy_OKM lemma
-    new ~msg;
-    event Secret(~msg);                // paired with Server's Received in executability lemma
-    out(senc(~msg, OKM));
+    new ~m;
+    event Secret(~m);                  // paired with Server's Received in executability lemma
+    out(senc(~m, OKM));
     0
 
 let Server(~psk) =
-    in(gx);
-    new ~y;
-    let gy = 'g'^~y in
-    out(gy);
-    let Z    = gx^~y in
-    let salt = h(<gx, gy>) in
-    let IKM  = <Z, ~psk> in
+    in(ePKc);
+    new ~eKs;
+    let ePKs = 'g'^~eKs in
+    out(ePKs);
+    let dhZ  = ePKc^~eKs in
+    let salt = h(<ePKc, ePKs>) in
+    let IKM  = <dhZ, ~psk> in
     let PRK  = hkdf_extract(salt, IKM) in
     let OKM  = hkdf_expand(PRK, 'session-key', '32') in
     event SessionKey('Server', OKM);   // feeds secrecy_OKM lemma
-    in(c);
-    let m = sdec(c, OKM) in
+    in(xencC);
+    let m = sdec(xencC, OKM) in
     event Received(m);                 // paired with Client's Secret in executability lemma
     0
 

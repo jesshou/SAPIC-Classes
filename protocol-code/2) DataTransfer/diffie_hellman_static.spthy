@@ -7,23 +7,23 @@ builtins: diffie-hellman
    secrecy, contrast with diffie_hellman_ephemeral.spthy. */
 
 let Server =
-    new skS;                       // long-term static secret exponent
-    let pkS = 'g'^skS in
-    out(pkS);                      // publish static public key
+    new ltKs;                      // long-term static secret exponent
+    let pKs = 'g'^ltKs in
+    out(pKs);                      // publish static public key
     !(
-        in(pkC);                   // receive client's static public key
-        let k = pkC^skS in         // k = g^(skC*skS)
-        event ServerKey(pkS, pkC, k)
+        in(pKc);                   // receive client's static public key
+        let dhZ = pKc^ltKs in      // dhZ = g^(ltKc*ltKs)
+        event ServerKey(pKs, pKc, dhZ)
     )
 
 let Client =
-    new skC;                       // long-term static secret exponent
-    let pkC = 'g'^skC in
-    out(pkC);                      // publish static public key
+    new ltKc;                      // long-term static secret exponent
+    let pKc = 'g'^ltKc in
+    out(pKc);                      // publish static public key
     !(
-        in(pkS);                   // receive server's static public key
-        let k = pkS^skC in         // k = g^(skS*skC)
-        event ClientKey(pkC, pkS, k)
+        in(pKs);                   // receive server's static public key
+        let dhZ = pKs^ltKc in      // dhZ = g^(ltKs*ltKc)
+        event ClientKey(pKc, pKs, dhZ)
     )
 
 process:
@@ -32,7 +32,7 @@ process:
 
 lemma key_agreement_exists:
 exists-trace
-"Ex pkS pkC k #i #j.
-    ServerKey(pkS, pkC, k) @ i  & ClientKey(pkC, pkS, k) @ j"
+"Ex pKs pKc dhZ #i #j.
+    ServerKey(pKs, pKc, dhZ) @ i  & ClientKey(pKc, pKs, dhZ) @ j"
 
 end

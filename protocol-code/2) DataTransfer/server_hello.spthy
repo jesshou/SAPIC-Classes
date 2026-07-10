@@ -4,19 +4,19 @@ begin
 /* Server sends a ServerHello (a fresh random); Client receives it. */
 
 let Server =
-    new sr;                          // server random (nonce)
-    event Create_ServerHello(sr);    // mark creation of the Server Hello
-    out(sr)
+    new n;                            // server random (nonce)
+    event Create_ServerHello(n);      // mark creation of the Server Hello
+    out(n)
 
 let Client =
-    in(x);
-    event ClientReceivedHello(x)     // record receipt for exists_ServerHello lemma
+    in(n);
+    event ClientReceivedHello(n)      // record receipt for exists_ServerHello lemma
 
 process:
     ( !Server ) | ( !Client )
 
 lemma exists_ServerHello:
 exists-trace
-  " Ex x #i. ClientReceivedHello(x) @ i "
+  " Ex n #i. ClientReceivedHello(n) @ i "
 
 end

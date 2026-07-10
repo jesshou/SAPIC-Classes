@@ -15,6 +15,11 @@ let Server() =
 
 process:
 new ~psk;                          // long-term pre-shared key, generated once and shared out-of-band
+event PSKGenerated(~psk);
 ( !Client(~psk) | !Server(~psk) )
+
+lemma psk_setup_reachable:
+  exists-trace
+  "Ex psk #i. PSKGenerated(psk) @ #i"
 
 end

@@ -1,48 +1,48 @@
 theory asymmetric_encryption_decryption
 begin
 
-/* Client transports a session key k to Server via public-key encryption.
+/* Client transports a session key psk to Server via public-key encryption.
    Long-term keys can be leaked (LtkReveal) to model compromise, which the
    secrecy lemma below conditions on. */
 
 builtins: asymmetric-encryption
 
-let Client(skC, pkS) =
-  new k;                              // session key to transport
-  let message = aenc(k, pkS) in       // encrypt under Server's public key
-  out(message);
-  event SessKeyC(pkS, k)              // record for secrecy lemma
+let Client(ltKc, pKs) =
+  new psk;                              // session key to transport
+  let xencC = aenc(psk, pKs) in         // encrypt under Server's public key
+  out(xencC);
+  event SessKeyC(pKs, psk)              // record for secrecy lemma
 
-let Server(skS, pkS) =
-  in(request);
-  let key = adec(request, skS) in     // decrypt with Server's private key
-  event AnswerRequest(pkS, key)
+let Server(ltKs, pKs) =
+  in(xencC);
+  let psk = adec(xencC, ltKs) in        // decrypt with Server's private key
+  event AnswerRequest(pKs, psk)
 
 process:
 !(
-  new sks; out(pk(sks));              // Server long-term key, public part published
+  new ltKs; out(pk(ltKs));              // Server long-term key, public part published
   !(
-    new skc; out(pk(skc));            // Client long-term key, public part published
-      ( !Client(skc, pk(sks)) | (event LtkReveal(pk(skc)); out(pk(skc))) )   // branch: leak client's long-term key
-    | ( !Server(sks, pk(sks)) | (event LtkReveal(pk(sks)); out(pk(sks))) )   // branch: leak server's long-term key
+    new ltKc; out(pk(ltKc));            // Client long-term key, public part published
+      ( !Client(ltKc, pk(ltKs)) | (event LtkReveal(pk(ltKc)); out(pk(ltKc))) )   // branch: leak client's long-term key
+    | ( !Server(ltKs, pk(ltKs)) | (event LtkReveal(pk(ltKs)); out(pk(ltKs))) )   // branch: leak server's long-term key
   )
 )
 
 lemma Client_session_key_secrecy:
 "
     not(
-      Ex S k #i #j.
-        SessKeyC(S, k) @ #i
-        & K(k) @ #j
-        & not(Ex #r. LtkReveal(S) @ r)
+      Ex pKs psk #i #j.
+        SessKeyC(pKs, psk) @ #i
+        & K(psk) @ #j
+        & not(Ex #r. LtkReveal(pKs) @ r)
     )
   "
 
 lemma Client_session_key_honest_setup:
 exists-trace
-  " Ex S k #i.
-      SessKeyC(S, k) @ #i
-      & not(Ex #r. LtkReveal(S) @ r)
+  " Ex pKs psk #i.
+      SessKeyC(pKs, psk) @ #i
+      & not(Ex #r. LtkReveal(pKs) @ r)
   "
 
 end
