@@ -1,14 +1,16 @@
 theory server_hello
 begin
 
+/* Server sends a ServerHello (a fresh random); Client receives it. */
+
 let Server =
-    new sr;
-    event Create_ServerHello(sr);
+    new sr;                          // server random (nonce)
+    event Create_ServerHello(sr);    // mark creation of the Server Hello
     out(sr)
 
 let Client =
     in(x);
-    event ClientReceivedHello(x)
+    event ClientReceivedHello(x)     // record receipt for exists_ServerHello lemma
 
 process:
     ( !Server ) | ( !Client )

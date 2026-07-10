@@ -1,23 +1,27 @@
 theory hashing
 begin
 
+/* Server publishes h(k); Client checks a received value hashes to h(k) as
+   a proof of key knowledge. k can be leaked (KeyReveal) to model compromise,
+   which Client_auth conditions on. */
+
 builtins: hashing
 
 let Client(k) =
   in(cipher);
-  if h(k) = cipher then
+  if h(k) = cipher then          // verify the hash matches this session's key
     event SessKeyC(k)
 
 let Server(k) =
   event AnswerRequest(k);
-  let H = h(k) in
+  let H = h(k) in                // one-way hash of the key, safe to publish
   out(H)
 
 process:
 !(
-  new k;
-  ( !Client(k) | (event KeyReveal(k); out(k))
-  | !Server(k) | (event KeyReveal(k); out(k)) )
+  new k;                                                // fresh key per session
+  ( !Client(k) | (event KeyReveal(k); out(k))            // branch: leak k
+  | !Server(k) | (event KeyReveal(k); out(k)) )          // branch: leak k
 )
 
 lemma Client_auth:

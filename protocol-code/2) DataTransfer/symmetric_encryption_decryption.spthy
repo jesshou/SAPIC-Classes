@@ -1,23 +1,24 @@
 theory symmetric_encryption_decryption
 begin
 
+/* Client encrypts a fresh message under a shared symmetric key; Server decrypts it. */
+
 builtins: symmetric-encryption
 
 let Client(k) =
-    new m;
+    new m;                    // message to send
     event ClientSent(m);
     out(senc(m, k))
 
 let Server(k) =
     in(xenc);
-    let m = sdec(xenc, k) in
+    let m = sdec(xenc, k) in  // decrypt with the shared key
     event ServerReceived(m)
 
 process:
-new k;
+new k;                        // shared symmetric key, generated once
 ( !Client(k) | !Server(k) )
 
-/* exists trace lemma */
 lemma decryption_exists:
 exists-trace
 "Ex m #i #j.

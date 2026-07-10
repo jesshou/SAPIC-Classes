@@ -3,7 +3,9 @@ begin
 
 builtins: diffie-hellman
 
-/* ----------------------- Server ----------------------- */
+/* Static (long-term, reused) Diffie-Hellman key exchange - no forward
+   secrecy, contrast with diffie_hellman_ephemeral.spthy. */
+
 let Server =
     new skS;                       // long-term static secret exponent
     let pkS = 'g'^skS in
@@ -14,7 +16,6 @@ let Server =
         event ServerKey(pkS, pkC, k)
     )
 
-/* ----------------------- Client ----------------------- */
 let Client =
     new skC;                       // long-term static secret exponent
     let pkC = 'g'^skC in
@@ -25,12 +26,10 @@ let Client =
         event ClientKey(pkC, pkS, k)
     )
 
-/* ----------------------- Process ----------------------- */
 process:
     ( !Server | !Client )
 
 
-/* exists trace lemma */
 lemma key_agreement_exists:
 exists-trace
 "Ex pkS pkC k #i #j.

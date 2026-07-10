@@ -1,11 +1,13 @@
 theory setup
 begin
 
+/* Stub: empty Client/Server roles, no behavior defined yet. */
+
 let Client() =
-    0
+    0   // no-op placeholder
 
 let Server() =
-    0
+    0   // no-op placeholder
 
 process:
 ( !Client() | !Server() )

@@ -1,26 +1,30 @@
 theory asymmetric_encryption_decryption
 begin
 
+/* Client transports a session key k to Server via public-key encryption.
+   Long-term keys can be leaked (LtkReveal) to model compromise, which the
+   secrecy lemma below conditions on. */
+
 builtins: asymmetric-encryption
 
 let Client(skC, pkS) =
-  new k;
-  let message = aenc(k, pkS) in
+  new k;                              // session key to transport
+  let message = aenc(k, pkS) in       // encrypt under Server's public key
   out(message);
-  event SessKeyC(pkS, k)
+  event SessKeyC(pkS, k)              // record for secrecy lemma
 
 let Server(skS, pkS) =
   in(request);
-  let key = adec(request, skS) in
+  let key = adec(request, skS) in     // decrypt with Server's private key
   event AnswerRequest(pkS, key)
 
 process:
 !(
-  new sks; out(pk(sks));
+  new sks; out(pk(sks));              // Server long-term key, public part published
   !(
-    new skc; out(pk(skc));
-      ( !Client(skc, pk(sks)) | (event LtkReveal(pk(skc)); out(pk(skc))) )
-    | ( !Server(sks, pk(sks)) | (event LtkReveal(pk(sks)); out(pk(sks))) )
+    new skc; out(pk(skc));            // Client long-term key, public part published
+      ( !Client(skc, pk(sks)) | (event LtkReveal(pk(skc)); out(pk(skc))) )   // branch: leak client's long-term key
+    | ( !Server(sks, pk(sks)) | (event LtkReveal(pk(sks)); out(pk(sks))) )   // branch: leak server's long-term key
   )
 )
 

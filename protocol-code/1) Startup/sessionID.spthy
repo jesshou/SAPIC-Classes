@@ -1,10 +1,11 @@
 theory sessionID
 begin
 
-/* ===== Client ===== */
+/* Client generates a single fresh session identifier. */
+
 let Client() =
     new cid;                   // fresh session ID - a bookkeeping/correlation label, not a cryptographic value
-    event ClientSessionID(cid); 
+    event ClientSessionID(cid); // record session ID creation for executability lemma
     0
     // NOTE: placement of `new cid` matters - see "general_SAPIC+_instruction".
 

@@ -1,22 +1,21 @@
 theory client_hello
 begin
 
-/* ===== Client ===== */
+/* Client sends a ClientHello (a fresh random); Server receives it. */
+
 let Client =
     new cr;                                  // client random (nonce)
     event Create_ClientHello(cr);            // mark creation of the Client Hello
     out(cr);            // send ClientHello
     0
-    
 
-/* ===== Server ===== */
+
 let Server =
     in(cr);              // receive the Client Hello
-    event Receive_ClientHello(cr);
+    event Receive_ClientHello(cr);   // record receipt for exists_ClientHello lemma
     0
-    
 
-/* ===== Main process ===== */
+
 process:
       ( !Client | !Server )
 

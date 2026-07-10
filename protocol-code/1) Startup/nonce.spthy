@@ -1,10 +1,11 @@
 theory nonce
 begin
 
-/* ===== Client ===== */
+/* Client generates a single fresh nonce. */
+
 let Client() =
     new n;                    // fresh, unpredictable nonce - proves freshness / prevents replay
-    event ClientNonce(n);    
+    event ClientNonce(n);      // record nonce creation for executability lemma
     0
     // NOTE: placement of `new n` matters - see "general_SAPIC+_instruction".
 

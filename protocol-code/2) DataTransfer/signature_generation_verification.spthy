@@ -1,17 +1,20 @@
 theory signature_generation_verification
 begin
 
+/* Server signs a message with a fresh keypair; Client verifies the
+   signature against the (unauthenticated) public key it receives. */
+
 builtins: signing
 
 let Server() =
-    new sk;
-    new m;
+    new sk;                                    // fresh long-term signing key
+    new m;                                      // message to sign
     event ServerSign(pk(sk), m);
-    out(<pk(sk), m, sign(m, sk)>)
+    out(<pk(sk), m, sign(m, sk)>)               // publish pubkey, message, and signature together
 
 let Client() =
     in(<pkS, m, sig>);
-    if verify(sig, m, pkS) = true then
+    if verify(sig, m, pkS) = true then          // check signature validity
         event ClientVerify(pkS, m)
     else
         0

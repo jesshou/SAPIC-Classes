@@ -1,22 +1,25 @@
 theory application_data_exchange
 begin
 
+/* Client and Server exchange one application message each under a shared
+   symmetric key k. Correlation events are commented out - no lemmas yet. */
+
 builtins: symmetric-encryption
 
 let Client(k) =
-    new m;
+    new m;                       // application message to send
     // event Send('Client', 'Server', m);
     out(senc(m, k));
     in(xenc);
-    let m2 = sdec(xenc, k) in
+    let m2 = sdec(xenc, k) in    // decrypt Server's reply
     // event Recv('Client', 'Server', m2);
     0
 
 let Server(k) =
     in(xenc);
-    let m = sdec(xenc, k) in
+    let m = sdec(xenc, k) in     // decrypt Client's message
     // event Recv('Server', 'Client', m);
-    new r;
+    new r;                        // reply message
     // event Send('Server', 'Client', r);
     out(senc(r, k));
     0

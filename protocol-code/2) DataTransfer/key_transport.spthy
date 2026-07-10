@@ -1,19 +1,22 @@
 theory key_transport
 begin
 
+/* Client generates a session key and transports it to Server, encrypted
+   under Server's public key. */
+
 builtins: asymmetric-encryption
 
 let Client() =
-    in(pkS);
-    new k;
+    in(pkS);                          // receive Server's public key
+    new k;                            // session key to transport
     event ClientKey(k);
-    out(aenc(k, pkS))
+    out(aenc(k, pkS))                 // encrypt key under Server's public key
 
 let Server() =
-    new ltkS;
-    out(pk(ltkS));
+    new ltkS;                         // long-term secret key
+    out(pk(ltkS));                    // publish matching public key
     in(cipher);
-    let k = adec(cipher, ltkS) in
+    let k = adec(cipher, ltkS) in     // decrypt with private key
     event ServerKey(k)
 
 process:

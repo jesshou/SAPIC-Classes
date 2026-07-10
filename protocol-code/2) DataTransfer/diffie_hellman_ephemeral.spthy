@@ -1,27 +1,29 @@
 theory diffie_hellman_ephemeral
 begin
 
+/* Ephemeral (fresh per-session) Diffie-Hellman key exchange - forward secrecy. */
+
 builtins: diffie-hellman
 
 let Client() =
-    new x;
-    let gx = 'g'^x in
+    new x;                            // ephemeral secret exponent, generated fresh each run
+    let gx = 'g'^x in                 // Client's ephemeral public share
     event ClientSentGX(gx);
     out(gx);
     in(gy);
     event ClientRecvGY(gy);
-    let k = gy^x in
-    event SessKey('Client', gx, gy, k)
+    let k = gy^x in                   // shared secret = g^(x*y)
+    event SessKey('Client', gx, gy, k)  // feeds keys_match lemma
 
 let Server() =
-    new y;
-    let gy = 'g'^y in
+    new y;                            // ephemeral secret exponent, generated fresh each run
+    let gy = 'g'^y in                 // Server's ephemeral public share
     event ServerSentGY(gy);
     out(gy);
     in(gx);
     event ServerRecvGX(gx);
-    let k = gx^y in
-    event SessKey('Server', gx, gy, k)
+    let k = gx^y in                   // shared secret = g^(x*y)
+    event SessKey('Server', gx, gy, k)  // feeds keys_match lemma
 
 process:
 ( !Client() | !Server() )

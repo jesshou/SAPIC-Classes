@@ -1,18 +1,20 @@
 theory asymmetric_key_generation
 begin
 
+/* Client and Server each generate a long-term asymmetric keypair. */
+
 builtins: asymmetric-encryption
 
 let Client() =
-    new ~ltkA;
-    let pkA = pk(~ltkA) in
-    event ClientInit(pkA);
+    new ~ltkA;                  // fresh long-term secret key (~ = never leaves this role)
+    let pkA = pk(~ltkA) in       // derive matching public key
+    event ClientInit(pkA);       // record keypair creation for executability lemma
     0
 
 let Server() =
-    new ~ltkB;
-    let pkB = pk(~ltkB) in
-    event ServerInit(pkB);
+    new ~ltkB;                  // fresh long-term secret key (~ = never leaves this role)
+    let pkB = pk(~ltkB) in       // derive matching public key
+    event ServerInit(pkB);       // record keypair creation for executability lemma
     0
 
 process:
