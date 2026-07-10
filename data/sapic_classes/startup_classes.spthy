@@ -1,0 +1,126 @@
+/* Aggregated Startup SAPIC+ classes */
+
+/* ===== setup.spthy ===== */
+theory setup
+begin
+
+/* Stub: empty Client/Server roles, no behavior defined yet. */
+
+let Client() =
+    0   // no-op placeholder
+
+let Server() =
+    0   // no-op placeholder
+
+process:
+( !Client() | !Server() )
+
+end
+
+
+/* ===== asymmetric_key_generation.spthy ===== */
+theory asymmetric_key_generation
+begin
+
+/* Client and Server each generate a long-term asymmetric keypair. */
+
+builtins: asymmetric-encryption
+
+let Client() =
+    new ~ltKc;                  // fresh long-term secret key (~ = never leaves this role)
+    let pKc = pk(~ltKc) in       // derive matching public key
+    event ClientInit(pKc);       // record keypair creation for executability lemma
+    0
+
+let Server() =
+    new ~ltKs;                  // fresh long-term secret key (~ = never leaves this role)
+    let pKs = pk(~ltKs) in       // derive matching public key
+    event ServerInit(pKs);       // record keypair creation for executability lemma
+    0
+
+process:
+( !Client() | !Server() )
+
+lemma setup_executable:
+    exists-trace
+    "Ex pKc #i. ClientInit(pKc) @ i"
+
+lemma server_setup_executable:
+    exists-trace
+    "Ex pKs #i. ServerInit(pKs) @ i"
+
+end
+
+
+/* ===== symmetric_key_generation.spthy ===== */
+theory symmetric_key_generation
+begin
+
+/* Stub: a shared long-term PSK is generated once and passed to
+   Client/Server, whose bodies are not yet implemented.
+   NOTE: `let Client()`/`let Server()` take no parameters here, but the
+   process below calls them as `Client(~psk)`/`Server(~psk)` - check this
+   arity mismatch before building on top of this file. */
+
+let Client() =
+    0   // no-op placeholder
+
+let Server() =
+    0   // no-op placeholder
+
+process:
+new ~psk;                          // long-term pre-shared key, generated once and shared out-of-band
+event PSKGenerated(~psk);
+( !Client(~psk) | !Server(~psk) )
+
+lemma psk_setup_reachable:
+  exists-trace
+  "Ex psk #i. PSKGenerated(psk) @ #i"
+
+end
+
+
+/* ===== nonce.spthy ===== */
+theory nonce
+begin
+
+/* Client generates a single fresh nonce. */
+
+let Client() =
+    new n;                    // fresh, unpredictable nonce - proves freshness / prevents replay
+    event ClientNonce(n);      // record nonce creation for executability lemma
+    0
+    // NOTE: placement of `new n` matters - see "general_SAPIC+_instruction".
+
+process:
+( !Client() )
+
+lemma nonce_executable:
+    exists-trace
+    "Ex n #i. ClientNonce(n) @ i"
+
+end
+
+
+/* ===== sessionID.spthy ===== */
+theory sessionID
+begin
+
+/* Client generates a single fresh session identifier. */
+
+let Client() =
+    new cid;                   // fresh session ID - a bookkeeping/correlation label, not a cryptographic value
+    event ClientSessionID(cid); // record session ID creation for executability lemma
+    0
+    // NOTE: placement of `new cid` matters - see "general_SAPIC+_instruction".
+
+process:
+( !Client() )
+
+lemma sessionID_executable:
+    exists-trace
+    "Ex cid #i. ClientSessionID(cid) @ i"
+
+end
+
+

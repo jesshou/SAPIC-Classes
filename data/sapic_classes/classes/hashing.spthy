@@ -1,0 +1,43 @@
+theory hashing
+begin
+
+/* Server publishes h(psk); Client checks a received value hashes to h(psk) as
+   a proof of key knowledge. psk can be leaked (KeyReveal) to model compromise,
+   which Client_auth conditions on. */
+
+builtins: hashing
+
+let Client(psk) =
+  in(H);
+  if h(psk) = H then              // verify the hash matches this session's key
+    event SessKeyC(psk)
+
+let Server(psk) =
+  event AnswerRequest(psk);
+  let H = h(psk) in                // one-way hash of the key, safe to publish
+  out(H)
+
+process:
+!(
+  new psk;                                                // fresh key per session
+  ( !Client(psk) | (event KeyReveal(psk); out(psk))        // branch: leak psk
+  | !Server(psk) | (event KeyReveal(psk); out(psk)) )      // branch: leak psk
+)
+
+lemma Client_auth:
+"
+    All psk #i. SessKeyC(psk) @ #i
+      ==>
+       ( (Ex #a. AnswerRequest(psk) @ a)
+       | (Ex #r. KeyReveal(psk) @ r & r < i)
+       )
+  "
+
+lemma Client_session_key_honest_setup:
+exists-trace
+  " Ex psk #i.
+      SessKeyC(psk) @ #i
+      & not(Ex #r. KeyReveal(psk) @ r)
+  "
+
+end

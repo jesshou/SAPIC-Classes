@@ -1,0 +1,38 @@
+theory diffie_hellman_static
+begin
+
+builtins: diffie-hellman
+
+/* Static (long-term, reused) Diffie-Hellman key exchange - no forward
+   secrecy, contrast with diffie_hellman_ephemeral.spthy. */
+
+let Server =
+    new ltKs;                      // long-term static secret exponent
+    let pKs = 'g'^ltKs in
+    out(pKs);                      // publish static public key
+    !(
+        in(pKc);                   // receive client's static public key
+        let dhZ = pKc^ltKs in      // dhZ = g^(ltKc*ltKs)
+        event ServerKey(pKs, pKc, dhZ)
+    )
+
+let Client =
+    new ltKc;                      // long-term static secret exponent
+    let pKc = 'g'^ltKc in
+    out(pKc);                      // publish static public key
+    !(
+        in(pKs);                   // receive server's static public key
+        let dhZ = pKs^ltKc in      // dhZ = g^(ltKs*ltKc)
+        event ClientKey(pKc, pKs, dhZ)
+    )
+
+process:
+    ( !Server | !Client )
+
+
+lemma key_agreement_exists:
+exists-trace
+"Ex pKs pKc dhZ #i #j.
+    ServerKey(pKs, pKc, dhZ) @ i  & ClientKey(pKc, pKs, dhZ) @ j"
+
+end

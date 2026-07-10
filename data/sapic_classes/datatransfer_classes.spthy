@@ -1,0 +1,492 @@
+/* Aggregated DataTransfer SAPIC+ classes */
+
+/* ===== client_hello.spthy ===== */
+theory client_hello
+begin
+
+/* Client sends a ClientHello (a fresh random); Server receives it. */
+
+let Client =
+    new n;                                   // client random (nonce)
+    event Create_ClientHello(n);             // mark creation of the Client Hello
+    out(n);            // send ClientHello
+    0
+
+
+let Server =
+    in(n);              // receive the Client Hello
+    event Receive_ClientHello(n);   // record receipt for exists_ClientHello lemma
+    0
+
+
+process:
+      ( !Client | !Server )
+
+lemma exists_ClientHello:
+exists-trace
+  " Ex n #i. Receive_ClientHello(n) @ i "
+
+end
+
+
+/* ===== server_hello.spthy ===== */
+theory server_hello
+begin
+
+/* Server sends a ServerHello (a fresh random); Client receives it. */
+
+let Server =
+    new n;                            // server random (nonce)
+    event Create_ServerHello(n);      // mark creation of the Server Hello
+    out(n)
+
+let Client =
+    in(n);
+    event ClientReceivedHello(n)      // record receipt for exists_ServerHello lemma
+
+process:
+    ( !Server ) | ( !Client )
+
+lemma exists_ServerHello:
+exists-trace
+  " Ex n #i. ClientReceivedHello(n) @ i "
+
+end
+
+
+/* ===== diffie_hellman_ephemeral.spthy ===== */
+theory diffie_hellman_ephemeral
+begin
+
+/* Ephemeral (fresh per-session) Diffie-Hellman key exchange - forward secrecy. */
+
+builtins: diffie-hellman
+
+let Client() =
+    new eKc;                            // ephemeral secret exponent, generated fresh each run
+    let ePKc = 'g'^eKc in               // Client's ephemeral public share
+    event ClientSentGX(ePKc);
+    out(ePKc);
+    in(ePKs);
+    event ClientRecvGY(ePKs);
+    let dhZ = ePKs^eKc in                // shared secret = g^(eKc*eKs)
+    event SessKey('Client', ePKc, ePKs, dhZ)  // feeds keys_match lemma
+
+let Server() =
+    new eKs;                            // ephemeral secret exponent, generated fresh each run
+    let ePKs = 'g'^eKs in               // Server's ephemeral public share
+    event ServerSentGY(ePKs);
+    out(ePKs);
+    in(ePKc);
+    event ServerRecvGX(ePKc);
+    let dhZ = ePKc^eKs in                // shared secret = g^(eKc*eKs)
+    event SessKey('Server', ePKc, ePKs, dhZ)  // feeds keys_match lemma
+
+process:
+( !Client() | !Server() )
+
+lemma server_received_client_key:
+  exists-trace
+  "Ex ePKc #i #j.
+      ServerRecvGX(ePKc) @ #i
+      & ClientSentGX(ePKc) @ #j
+      & #j < #i"
+
+lemma client_received_server_key:
+  exists-trace
+  "Ex ePKs #i #j.
+      ClientRecvGY(ePKs) @ #i
+      & ServerSentGY(ePKs) @ #j
+      & #j < #i"
+
+lemma keys_match:
+  "All ePKc ePKs dhZ1 dhZ2 #i #j.
+      SessKey('Client', ePKc, ePKs, dhZ1) @ #i &
+      SessKey('Server', ePKc, ePKs, dhZ2) @ #j
+      ==> dhZ1 = dhZ2"
+
+end
+
+
+/* ===== diffie_hellman_static.spthy ===== */
+theory diffie_hellman_static
+begin
+
+builtins: diffie-hellman
+
+/* Static (long-term, reused) Diffie-Hellman key exchange - no forward
+   secrecy, contrast with diffie_hellman_ephemeral.spthy. */
+
+let Server =
+    new ltKs;                      // long-term static secret exponent
+    let pKs = 'g'^ltKs in
+    out(pKs);                      // publish static public key
+    !(
+        in(pKc);                   // receive client's static public key
+        let dhZ = pKc^ltKs in      // dhZ = g^(ltKc*ltKs)
+        event ServerKey(pKs, pKc, dhZ)
+    )
+
+let Client =
+    new ltKc;                      // long-term static secret exponent
+    let pKc = 'g'^ltKc in
+    out(pKc);                      // publish static public key
+    !(
+        in(pKs);                   // receive server's static public key
+        let dhZ = pKs^ltKc in      // dhZ = g^(ltKs*ltKc)
+        event ClientKey(pKc, pKs, dhZ)
+    )
+
+process:
+    ( !Server | !Client )
+
+
+lemma key_agreement_exists:
+exists-trace
+"Ex pKs pKc dhZ #i #j.
+    ServerKey(pKs, pKc, dhZ) @ i  & ClientKey(pKc, pKs, dhZ) @ j"
+
+end
+
+
+/* ===== key_transport.spthy ===== */
+theory key_transport
+begin
+
+/* Client generates a session key and transports it to Server, encrypted
+   under Server's public key. */
+
+builtins: asymmetric-encryption
+
+let Client() =
+    in(pKs);                          // receive Server's public key
+    new psk;                          // session key to transport
+    event ClientKey(psk);
+    out(aenc(psk, pKs))               // encrypt key under Server's public key
+
+let Server() =
+    new ltKs;                         // long-term secret key
+    out(pk(ltKs));                    // publish matching public key
+    in(xencC);
+    let psk = adec(xencC, ltKs) in    // decrypt with private key
+    event ServerKey(psk)
+
+process:
+( !Client() | !Server() )
+
+lemma exists_trace:
+exists-trace
+"Ex psk #i #j. ClientKey(psk) @ i & ServerKey(psk) @ j"
+
+end
+
+
+/* ===== HKDF.spthy ===== */
+theory HKDF
+begin
+
+/* Session key derived via HKDF (RFC 5869) from an ephemeral DH secret dhZ
+   (forward secrecy) combined with a long-term PSK (implicit auth).
+   hkdf_extract/hkdf_expand are free functions - an abstract, unopinionated
+   stand-in for the real HMAC-based extract/expand steps. */
+
+builtins: diffie-hellman, hashing, symmetric-encryption
+
+functions:
+    hkdf_extract/2,   // HKDF-Extract(salt, IKM) -> PRK
+    hkdf_expand/3     // HKDF-Expand(PRK, info, L) -> OKM
+
+let Client(~psk) =
+    new ~eKc;
+    let ePKc = 'g'^~eKc in
+    out(ePKc);
+    in(ePKs);
+    let dhZ  = ePKs^~eKc in
+    let salt = h(<ePKc, ePKs>) in
+    let IKM  = <dhZ, ~psk> in
+    let PRK  = hkdf_extract(salt, IKM) in
+    let OKM  = hkdf_expand(PRK, 'session-key', '32') in
+    event SessionKey('Client', OKM);   // feeds secrecy_OKM lemma
+    new ~m;
+    event Secret(~m);                  // paired with Server's Received in executability lemma
+    out(senc(~m, OKM));
+    0
+
+let Server(~psk) =
+    in(ePKc);
+    new ~eKs;
+    let ePKs = 'g'^~eKs in
+    out(ePKs);
+    let dhZ  = ePKc^~eKs in
+    let salt = h(<ePKc, ePKs>) in
+    let IKM  = <dhZ, ~psk> in
+    let PRK  = hkdf_extract(salt, IKM) in
+    let OKM  = hkdf_expand(PRK, 'session-key', '32') in
+    event SessionKey('Server', OKM);   // feeds secrecy_OKM lemma
+    in(xencC);
+    let m = sdec(xencC, OKM) in
+    event Received(m);                 // paired with Client's Secret in executability lemma
+    0
+
+lemma executability:
+    exists-trace
+    "Ex m #i #j. Secret(m)@i & Received(m)@j & #i < #j"
+
+lemma secrecy_OKM:
+    "All role k #i. SessionKey(role, k)@i ==> not (Ex #j. K(k)@j)"
+
+process:
+    new ~psk;
+    ( !Client(~psk) | !Server(~psk) )
+
+end
+
+
+/* ===== signature_generation_verification.spthy ===== */
+theory signature_generation_verification
+begin
+
+/* Server signs a message with a fresh keypair; Client verifies the
+   signature against the (unauthenticated) public key it receives. */
+
+builtins: signing
+
+let Server() =
+    new ltKs;                                    // fresh long-term signing key
+    new m;                                        // message to sign
+    event ServerSign(pk(ltKs), m);
+    out(<pk(ltKs), m, sign(m, ltKs)>)             // publish pubkey, message, and signature together
+
+let Client() =
+    in(<pKs, m, sig>);
+    if verify(sig, m, pKs) = true then          // check signature validity
+        event ClientVerify(pKs, m)
+    else
+        0
+
+process:
+( !Client() | !Server() )
+
+lemma client_verify_exists: exists-trace "Ex pKs m #i. ClientVerify(pKs, m) @ #i"
+
+end
+
+
+/* ===== asymmetric_encryption_decryption.spthy ===== */
+theory asymmetric_encryption_decryption
+begin
+
+/* Client transports a session key psk to Server via public-key encryption.
+   Long-term keys can be leaked (LtkReveal) to model compromise, which the
+   secrecy lemma below conditions on. */
+
+builtins: asymmetric-encryption
+
+let Client(ltKc, pKs) =
+  new psk;                              // session key to transport
+  let xencC = aenc(psk, pKs) in         // encrypt under Server's public key
+  out(xencC);
+  event SessKeyC(pKs, psk)              // record for secrecy lemma
+
+let Server(ltKs, pKs) =
+  in(xencC);
+  let psk = adec(xencC, ltKs) in        // decrypt with Server's private key
+  event AnswerRequest(pKs, psk)
+
+process:
+!(
+  new ltKs; out(pk(ltKs));              // Server long-term key, public part published
+  !(
+    new ltKc; out(pk(ltKc));            // Client long-term key, public part published
+      ( !Client(ltKc, pk(ltKs)) | (event LtkReveal(pk(ltKc)); out(pk(ltKc))) )   // branch: leak client's long-term key
+    | ( !Server(ltKs, pk(ltKs)) | (event LtkReveal(pk(ltKs)); out(pk(ltKs))) )   // branch: leak server's long-term key
+  )
+)
+
+lemma Client_session_key_secrecy:
+"
+    not(
+      Ex pKs psk #i #j.
+        SessKeyC(pKs, psk) @ #i
+        & K(psk) @ #j
+        & not(Ex #r. LtkReveal(pKs) @ r)
+    )
+  "
+
+lemma Client_session_key_honest_setup:
+exists-trace
+  " Ex pKs psk #i.
+      SessKeyC(pKs, psk) @ #i
+      & not(Ex #r. LtkReveal(pKs) @ r)
+  "
+
+end
+
+
+/* ===== hashing.spthy ===== */
+theory hashing
+begin
+
+/* Server publishes h(psk); Client checks a received value hashes to h(psk) as
+   a proof of key knowledge. psk can be leaked (KeyReveal) to model compromise,
+   which Client_auth conditions on. */
+
+builtins: hashing
+
+let Client(psk) =
+  in(H);
+  if h(psk) = H then              // verify the hash matches this session's key
+    event SessKeyC(psk)
+
+let Server(psk) =
+  event AnswerRequest(psk);
+  let H = h(psk) in                // one-way hash of the key, safe to publish
+  out(H)
+
+process:
+!(
+  new psk;                                                // fresh key per session
+  ( !Client(psk) | (event KeyReveal(psk); out(psk))        // branch: leak psk
+  | !Server(psk) | (event KeyReveal(psk); out(psk)) )      // branch: leak psk
+)
+
+lemma Client_auth:
+"
+    All psk #i. SessKeyC(psk) @ #i
+      ==>
+       ( (Ex #a. AnswerRequest(psk) @ a)
+       | (Ex #r. KeyReveal(psk) @ r & r < i)
+       )
+  "
+
+lemma Client_session_key_honest_setup:
+exists-trace
+  " Ex psk #i.
+      SessKeyC(psk) @ #i
+      & not(Ex #r. KeyReveal(psk) @ r)
+  "
+
+end
+
+
+/* ===== handshake_finished.spthy ===== */
+theory handshake_finished
+begin
+
+/* Ephemeral DH exchange followed by TLS-style "Finished" messages: each
+   side hashes the derived key with a role-tagged label to prove to the
+   other that it holds the same key before accepting. */
+
+builtins: diffie-hellman, hashing
+
+let Client() =
+    new eKc;                                          // ephemeral DH secret
+    out(<'c1', 'g'^eKc>);                              // tag 'c1' = client's DH share
+    in(<'s1', ePKs>);                                  // tag 's1' = server's DH share
+    let dhZ = ePKs^eKc in                              // shared DH secret
+    event ClientDerivedKey(dhZ);
+    let finC = h(<'finished_client', dhZ>) in          // key-confirmation MAC, tagged by role
+    out(<'c2', finC>);
+    in(<'s2', finS>);
+    if finS = h(<'finished_server', dhZ>) then         // verify server also derived dhZ
+    event ClientAccept(dhZ)
+
+let Server() =
+    new eKs;                                           // ephemeral DH secret
+    in(<'c1', ePKc>);                                  // tag 'c1' = client's DH share
+    out(<'s1', 'g'^eKs>);                               // tag 's1' = server's DH share
+    let dhZ = ePKc^eKs in                              // shared DH secret
+    event ServerDerivedKey(dhZ);
+    in(<'c2', finC>);
+    if finC = h(<'finished_client', dhZ>) then         // verify client also derived dhZ
+    let finS = h(<'finished_server', dhZ>) in          // key-confirmation MAC, tagged by role
+    out(<'s2', finS>);
+    event ServerAccept(dhZ)
+
+process:
+( !Client() | !Server() )
+
+lemma executable:
+  exists-trace
+  "Ex z #i #j.
+       ClientAccept(z) @ #i
+     & ServerAccept(z) @ #j"
+
+end
+
+
+/* ===== symmetric_encryption_decryption.spthy ===== */
+theory symmetric_encryption_decryption
+begin
+
+/* Client encrypts a fresh message under a shared symmetric key; Server decrypts it. */
+
+builtins: symmetric-encryption
+
+let Client(psk) =
+    new m;                    // message to send
+    event ClientSent(m);
+    out(senc(m, psk))
+
+let Server(psk) =
+    in(xencC);
+    let m = sdec(xencC, psk) in  // decrypt with the shared key
+    event ServerReceived(m)
+
+process:
+new psk;                        // shared symmetric key, generated once
+( !Client(psk) | !Server(psk) )
+
+lemma decryption_exists:
+exists-trace
+"Ex m #i #j.
+    ClientSent(m) @ i & ServerReceived(m) @ j"
+
+end
+
+
+/* ===== application_data_exchange.spthy ===== */
+theory application_data_exchange
+begin
+
+/* Client and Server exchange one application message each under a shared
+   symmetric key psk. Correlation events are commented out - no lemmas yet. */
+
+builtins: symmetric-encryption
+
+let Client(psk) =
+    new mC;                       // application message to send
+    event Send('Client', 'Server', mC);
+    out(senc(mC, psk));
+    in(xencS);
+    let mS = sdec(xencS, psk) in  // decrypt Server's reply
+    event Recv('Client', 'Server', mS);
+    0
+
+let Server(psk) =
+    in(xencC);
+    let mC = sdec(xencC, psk) in  // decrypt Client's message
+    event Recv('Server', 'Client', mC);
+    new mS;                        // reply message
+    event Send('Server', 'Client', mS);
+    out(senc(mS, psk));
+    0
+
+process:
+new psk;
+( !Client(psk) | !Server(psk) )
+
+lemma executable:
+  exists-trace
+  "Ex mC mS #i #j #k #l.
+       Send('Client', 'Server', mC) @ #i
+     & Recv('Server', 'Client', mC) @ #j
+     & Send('Server', 'Client', mS) @ #k
+     & Recv('Client', 'Server', mS) @ #l
+     & #i < #j
+     & #j < #k
+     & #k < #l"
+
+end
+
+

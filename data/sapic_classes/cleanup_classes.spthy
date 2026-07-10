@@ -1,0 +1,16 @@
+/* Aggregated Cleanup SAPIC+ classes */
+
+/* ===== closing.spthy ===== */
+theory ClientServer
+begin
+
+/* Stub: empty Client/Server roles, no cleanup/closing behavior defined yet. */
+
+let Client() = 0   // no-op placeholder
+let Server() = 0   // no-op placeholder
+
+process:
+( !Client() | !Server() )
+
+end
+

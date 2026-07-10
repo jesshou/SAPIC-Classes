@@ -1,0 +1,5 @@
+The client and server each generate long-term asymmetric key pairs.
+They exchange ClientHello and ServerHello messages with fresh nonces.
+Next they perform an ephemeral Diffie-Hellman key exchange to derive a shared secret.
+They then exchange application data encrypted under a shared symmetric key.
+Finally the session is closed.

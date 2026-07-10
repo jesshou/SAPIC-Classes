@@ -1,0 +1,43 @@
+theory handshake_finished
+begin
+
+/* Ephemeral DH exchange followed by TLS-style "Finished" messages: each
+   side hashes the derived key with a role-tagged label to prove to the
+   other that it holds the same key before accepting. */
+
+builtins: diffie-hellman, hashing
+
+let Client() =
+    new eKc;                                          // ephemeral DH secret
+    out(<'c1', 'g'^eKc>);                              // tag 'c1' = client's DH share
+    in(<'s1', ePKs>);                                  // tag 's1' = server's DH share
+    let dhZ = ePKs^eKc in                              // shared DH secret
+    event ClientDerivedKey(dhZ);
+    let finC = h(<'finished_client', dhZ>) in          // key-confirmation MAC, tagged by role
+    out(<'c2', finC>);
+    in(<'s2', finS>);
+    if finS = h(<'finished_server', dhZ>) then         // verify server also derived dhZ
+    event ClientAccept(dhZ)
+
+let Server() =
+    new eKs;                                           // ephemeral DH secret
+    in(<'c1', ePKc>);                                  // tag 'c1' = client's DH share
+    out(<'s1', 'g'^eKs>);                               // tag 's1' = server's DH share
+    let dhZ = ePKc^eKs in                              // shared DH secret
+    event ServerDerivedKey(dhZ);
+    in(<'c2', finC>);
+    if finC = h(<'finished_client', dhZ>) then         // verify client also derived dhZ
+    let finS = h(<'finished_server', dhZ>) in          // key-confirmation MAC, tagged by role
+    out(<'s2', finS>);
+    event ServerAccept(dhZ)
+
+process:
+( !Client() | !Server() )
+
+lemma executable:
+  exists-trace
+  "Ex z #i #j.
+       ClientAccept(z) @ #i
+     & ServerAccept(z) @ #j"
+
+end

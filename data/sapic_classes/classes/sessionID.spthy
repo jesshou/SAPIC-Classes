@@ -1,0 +1,19 @@
+theory sessionID
+begin
+
+/* Client generates a single fresh session identifier. */
+
+let Client() =
+    new cid;                   // fresh session ID - a bookkeeping/correlation label, not a cryptographic value
+    event ClientSessionID(cid); // record session ID creation for executability lemma
+    0
+    // NOTE: placement of `new cid` matters - see "general_SAPIC+_instruction".
+
+process:
+( !Client() )
+
+lemma sessionID_executable:
+    exists-trace
+    "Ex cid #i. ClientSessionID(cid) @ i"
+
+end

@@ -1,0 +1,29 @@
+theory key_transport
+begin
+
+/* Client generates a session key and transports it to Server, encrypted
+   under Server's public key. */
+
+builtins: asymmetric-encryption
+
+let Client() =
+    in(pKs);                          // receive Server's public key
+    new psk;                          // session key to transport
+    event ClientKey(psk);
+    out(aenc(psk, pKs))               // encrypt key under Server's public key
+
+let Server() =
+    new ltKs;                         // long-term secret key
+    out(pk(ltKs));                    // publish matching public key
+    in(xencC);
+    let psk = adec(xencC, ltKs) in    // decrypt with private key
+    event ServerKey(psk)
+
+process:
+( !Client() | !Server() )
+
+lemma exists_trace:
+exists-trace
+"Ex psk #i #j. ClientKey(psk) @ i & ServerKey(psk) @ j"
+
+end

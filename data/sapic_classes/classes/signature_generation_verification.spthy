@@ -1,0 +1,27 @@
+theory signature_generation_verification
+begin
+
+/* Server signs a message with a fresh keypair; Client verifies the
+   signature against the (unauthenticated) public key it receives. */
+
+builtins: signing
+
+let Server() =
+    new ltKs;                                    // fresh long-term signing key
+    new m;                                        // message to sign
+    event ServerSign(pk(ltKs), m);
+    out(<pk(ltKs), m, sign(m, ltKs)>)             // publish pubkey, message, and signature together
+
+let Client() =
+    in(<pKs, m, sig>);
+    if verify(sig, m, pKs) = true then          // check signature validity
+        event ClientVerify(pKs, m)
+    else
+        0
+
+process:
+( !Client() | !Server() )
+
+lemma client_verify_exists: exists-trace "Ex pKs m #i. ClientVerify(pKs, m) @ #i"
+
+end

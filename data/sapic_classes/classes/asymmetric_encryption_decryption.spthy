@@ -1,0 +1,48 @@
+theory asymmetric_encryption_decryption
+begin
+
+/* Client transports a session key psk to Server via public-key encryption.
+   Long-term keys can be leaked (LtkReveal) to model compromise, which the
+   secrecy lemma below conditions on. */
+
+builtins: asymmetric-encryption
+
+let Client(ltKc, pKs) =
+  new psk;                              // session key to transport
+  let xencC = aenc(psk, pKs) in         // encrypt under Server's public key
+  out(xencC);
+  event SessKeyC(pKs, psk)              // record for secrecy lemma
+
+let Server(ltKs, pKs) =
+  in(xencC);
+  let psk = adec(xencC, ltKs) in        // decrypt with Server's private key
+  event AnswerRequest(pKs, psk)
+
+process:
+!(
+  new ltKs; out(pk(ltKs));              // Server long-term key, public part published
+  !(
+    new ltKc; out(pk(ltKc));            // Client long-term key, public part published
+      ( !Client(ltKc, pk(ltKs)) | (event LtkReveal(pk(ltKc)); out(pk(ltKc))) )   // branch: leak client's long-term key
+    | ( !Server(ltKs, pk(ltKs)) | (event LtkReveal(pk(ltKs)); out(pk(ltKs))) )   // branch: leak server's long-term key
+  )
+)
+
+lemma Client_session_key_secrecy:
+"
+    not(
+      Ex pKs psk #i #j.
+        SessKeyC(pKs, psk) @ #i
+        & K(psk) @ #j
+        & not(Ex #r. LtkReveal(pKs) @ r)
+    )
+  "
+
+lemma Client_session_key_honest_setup:
+exists-trace
+  " Ex pKs psk #i.
+      SessKeyC(pKs, psk) @ #i
+      & not(Ex #r. LtkReveal(pKs) @ r)
+  "
+
+end
