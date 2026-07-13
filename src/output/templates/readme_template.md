@@ -27,7 +27,6 @@ Generated SAPIC+ model from an English protocol description.
 |------|---------|
 | `protocol.spthy` | Combined SAPIC+ theory (no lemmas) |
 | `protocol-executability-lemmas/` | Placeholder for future executability lemmas |
-| `general_SAPIC+_syntax_instructions` | Syntax rules used during generation |
 | `ReadMe` | This file |
 
 ## Running with Tamarin

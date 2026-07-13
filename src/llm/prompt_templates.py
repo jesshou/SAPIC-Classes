@@ -41,7 +41,11 @@ Hard requirements (from general SAPIC+ instructions):
 10. Follow naming conventions: pKc/pKs, ltKc/ltKs, psk, eKc/eKs, ePKc/ePKs, dhZ,
     n, m/mC/mS, xencC/xencS.
 11. Preserve protocol intent from the English description and the selected classes.
-12. Return ONLY the SAPIC+ theory source, no markdown fences or commentary.
+12. If a fragment's role parameter (e.g. `Server(psk)`) is a value shared by both
+    Client and Server, keep it as a parameter on both merged roles and hoist its
+    `new` into the combined theory's single `process:` block. Never `new` it
+    inside only one role — the other role's use of it will be unbound.
+13. Return ONLY the SAPIC+ theory source, no markdown fences or commentary.
 """
 
 
@@ -77,6 +81,7 @@ def rewrite_user_prompt(
     class_ids: list[str],
     fragments: list[dict[str, str]],
     syntax_instructions: str,
+    rewrite_instructions: str | None = None,
     validation_errors: list[str] | None = None,
 ) -> str:
     parts = [
@@ -89,6 +94,14 @@ def rewrite_user_prompt(
         "",
         "General SAPIC+ syntax instructions:",
         syntax_instructions.strip(),
+    ]
+    if rewrite_instructions:
+        parts += [
+            "",
+            "Class-combining instructions:",
+            rewrite_instructions.strip(),
+        ]
+    parts += [
         "",
         "Class fragments to stitch:",
     ]

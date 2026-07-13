@@ -111,7 +111,6 @@ outputs/<protocol_name>/
   protocol.spthy                         # combined SAPIC+ (no lemmas)
   protocol-executability-lemmas/         # placeholder
   ReadMe
-  general_SAPIC+_syntax_instructions
 ```
 
 ## Tests

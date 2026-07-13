@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -20,7 +19,6 @@ class OutputPaths:
     protocol_spthy: Path
     lemmas_dir: Path
     readme: Path
-    syntax_instructions: Path
 
 
 def _slugify(name: str) -> str:
@@ -49,7 +47,6 @@ def build_output(
     sapic_source: str,
     matches: list[ClassMatch],
     validation: ValidationResult,
-    syntax_instructions_src: Path | str,
     readme_template_src: Path | str | None = None,
 ) -> OutputPaths:
     """
@@ -59,7 +56,6 @@ def build_output(
           protocol.spthy
           protocol-executability-lemmas/   (placeholder)
           ReadMe
-          general_SAPIC+_syntax_instructions
     """
     root = ensure_dir(Path(outputs_dir) / _slugify(protocol_name))
     lemmas_dir = ensure_dir(root / "protocol-executability-lemmas")
@@ -73,9 +69,6 @@ def build_output(
     )
 
     protocol_spthy = write_text(root / "protocol.spthy", sapic_source)
-
-    syntax_dst = root / "general_SAPIC+_syntax_instructions"
-    shutil.copyfile(syntax_instructions_src, syntax_dst)
 
     template_path = (
         Path(readme_template_src)
@@ -97,5 +90,4 @@ def build_output(
         protocol_spthy=protocol_spthy,
         lemmas_dir=lemmas_dir,
         readme=readme,
-        syntax_instructions=syntax_dst,
     )

@@ -44,6 +44,7 @@ def rewrite_combined(
     library: ClassLibrary,
     english_description: str,
     syntax_instructions_path: Path | str,
+    rewrite_instructions_path: Path | str | None = None,
     client: OpenAIClient | None = None,
     use_llm: bool = True,
     max_attempts: int = 2,
@@ -56,6 +57,9 @@ def rewrite_combined(
     deterministic stitch is normalized locally.
     """
     instructions = read_text(syntax_instructions_path)
+    rewrite_instructions = (
+        read_text(rewrite_instructions_path) if rewrite_instructions_path else None
+    )
     source = _local_normalize(draft.source, draft.theory_name)
     result = validate_sapic(source)
 
@@ -86,6 +90,7 @@ def rewrite_combined(
             class_ids=draft.class_ids,
             fragments=fragments,
             syntax_instructions=instructions,
+            rewrite_instructions=rewrite_instructions,
             validation_errors=errors or None,
         )
         try:

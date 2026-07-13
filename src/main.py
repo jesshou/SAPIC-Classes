@@ -28,6 +28,7 @@ logger = get_logger(__name__)
 DATA_DIR = PROJECT_ROOT / "data"
 LIBRARY_DIR = DATA_DIR / "sapic_classes"
 SYNTAX_DOC = DATA_DIR / "general_SAPIC+_instruction.md"
+REWRITE_DOC = DATA_DIR / "general_rewrite_instructions.md"
 DEFAULT_OUTPUTS = PROJECT_ROOT / "outputs"
 
 
@@ -168,6 +169,7 @@ def run(args: argparse.Namespace) -> int:
         library,
         english_description=english,
         syntax_instructions_path=SYNTAX_DOC,
+        rewrite_instructions_path=REWRITE_DOC,
         client=client,
         use_llm=not args.no_llm and draft.needs_rewrite,
     )
@@ -186,14 +188,12 @@ def run(args: argparse.Namespace) -> int:
         sapic_source=source,
         matches=classification.matches,
         validation=validation,
-        syntax_instructions_src=SYNTAX_DOC,
     )
 
     print(f"\nWrote SAPIC+ model to: {paths.root}")
     print(f"  protocol.spthy")
     print(f"  protocol-executability-lemmas/  (placeholder, no lemmas yet)")
     print(f"  ReadMe")
-    print(f"  general_SAPIC+_syntax_instructions")
     return 0 if validation.ok else 2
 
 
