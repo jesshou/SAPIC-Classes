@@ -452,35 +452,6 @@
       "lemma_file": "lemmas/DataTransfer/symmetric_encryption_decryption.spthy"
     },
     {
-      "id": "application_data_exchange",
-      "name": "Application Data Exchange",
-      "phase": "DataTransfer",
-      "file": "classes/2) DataTransfer/application_data_exchange.spthy",
-      "builtins": [
-        "symmetric-encryption"
-      ],
-      "parameters": [
-        "psk"
-      ],
-      "keywords": [
-        "application data",
-        "message exchange",
-        "bidirectional",
-        "send receive",
-        "transport"
-      ],
-      "description": "Post-handshake bidirectional application data under shared key psk.",
-      "combinable": true,
-      "provides": [
-        "mC",
-        "mS"
-      ],
-      "requires": [
-        "psk"
-      ],
-      "lemma_file": "lemmas/DataTransfer/application_data_exchange.spthy"
-    },
-    {
       "id": "closing",
       "name": "Session Closing",
       "phase": "Cleanup",

@@ -54,7 +54,7 @@ def test_heuristic_maps_symmetric_enc():
     ]
     result = classify_sentences(sents, LIBRARY.raw, client=None, use_llm=False)
     ids = result.matches[0].class_ids
-    assert "symmetric_encryption_decryption" in ids or "application_data_exchange" in ids
+    assert "symmetric_encryption_decryption" in ids
 
 
 def test_empty_input():

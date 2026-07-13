@@ -60,7 +60,7 @@ Class sources mirror the `SAPIC+ Classes` library:
 | Phase | Classes |
 |-------|---------|
 | Startup | setup, asymmetric_key_generation, symmetric_key_generation, nonce, sessionID |
-| DataTransfer | client_hello, server_hello, diffie_hellman_ephemeral/static, key_transport, HKDF, signature_*, asymmetric_encryption_decryption, hashing, handshake_finished, symmetric_encryption_decryption, application_data_exchange |
+| DataTransfer | client_hello, server_hello, diffie_hellman_ephemeral/static, key_transport, HKDF, signature_*, asymmetric_encryption_decryption, hashing, handshake_finished, symmetric_encryption_decryption |
 | Cleanup | closing |
 
 ## Setup

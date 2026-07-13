@@ -23,7 +23,6 @@ _DATATRANSFER_ORDER = [
     "signature_generation_verification",
     "hashing",
     "symmetric_encryption_decryption",
-    "application_data_exchange",
 ]
 _STARTUP_ORDER = [
     "setup",

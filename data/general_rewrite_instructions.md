@@ -32,3 +32,34 @@ secrets that should be the same value (e.g. a DH-derived `dhZ` meant
 to serve as the symmetric key for a later data-exchange class),
 reuse the earlier bound variable as the later class's parameter
 instead of adding a second `new`.
+
+Rule: when a fragment's own shared secret is superseded this way, its
+`new` must not survive in the combined `process:` block. A `new` that
+nothing in the final `Client`/`Server` bodies (and no role parameter)
+references is dead and must be deleted, not carried over from the
+source fragment:
+
+    tamarin-prover / validator: `new psk` in process: is not passed
+    into Client/Server (let macros cannot see enclosing process names)
+
+Wrong (`symmetric_encryption_decryption`'s own `psk` copied over
+unused, even though its `senc`/`sdec` calls were rewritten to key on
+`dhZ` from the earlier DH exchange):
+
+    let Client() = ... let dhZ = ePKs^eKc in ... out(senc(mC, dhZ)) ...
+    let Server() = ... let dhZ = ePKc^eKs in ... let mC = sdec(xencC, dhZ) in ...
+    process:
+    new psk;
+    ( !Client() | !Server() )
+
+Right (the dead `new psk;` is dropped once `dhZ` replaces it
+everywhere `psk` used to appear):
+
+    let Client() = ... let dhZ = ePKs^eKc in ... out(senc(mC, dhZ)) ...
+    let Server() = ... let dhZ = ePKc^eKs in ... let mC = sdec(xencC, dhZ) in ...
+    process:
+    ( !Client() | !Server() )
+
+Before finalizing, check every `new` in `process:` appears either in
+a `Client(...)`/`Server(...)` parameter list or somewhere in a role
+body. If it appears in neither, remove that `new` line.
