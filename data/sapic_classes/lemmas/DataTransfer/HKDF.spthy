@@ -1,0 +1,8 @@
+/* Lemmas for class `HKDF` (data/sapic_classes/classes/2) DataTransfer/HKDF.spthy). */
+
+lemma executability:
+    exists-trace
+    "Ex m #i #j. Secret(m)@i & Received(m)@j & #i < #j"
+
+lemma secrecy_OKM:
+    "All role k #i. SessionKey(role, k)@i ==> not (Ex #j. K(k)@j)"

@@ -16,10 +16,15 @@ LIBRARY = load_library(PROJECT / "data" / "sapic_classes")
 
 
 def test_strip_lemmas_removes_lemma_blocks():
+    # Lemmas now live in data/sapic_classes/lemmas/, pulled in via #include;
+    # strip_lemmas must drop that #include too so generated output doesn't
+    # carry a path that's only valid relative to the library, not outputs/.
     src = LIBRARY.get("diffie_hellman_ephemeral").source
-    assert "lemma " in src
+    assert "#include" in src
+    assert "lemma " not in src
     stripped = strip_lemmas(src)
     assert "lemma " not in stripped
+    assert "#include" not in stripped
     assert "let Client" in stripped
     assert "process:" in stripped
     assert stripped.strip().endswith("end")

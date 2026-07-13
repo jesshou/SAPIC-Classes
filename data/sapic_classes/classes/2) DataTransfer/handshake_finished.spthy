@@ -34,10 +34,6 @@ let Server() =
 process:
 ( !Client() | !Server() )
 
-lemma executable:
-  exists-trace
-  "Ex z #i #j.
-       ClientAccept(z) @ #i
-     & ServerAccept(z) @ #j"
+#include "../../lemmas/DataTransfer/handshake_finished.spthy"
 
 end

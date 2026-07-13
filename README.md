@@ -100,7 +100,12 @@ python -m src.main --no-llm -f tests/sample_inputs/simple_dh.txt
 | `-o` / `--outputs-dir` | Output root (default `outputs/`) |
 | `--no-llm` | Keyword classifier + local stitch only |
 | `--model` | Override `OPENAI_MODEL` |
+| `--lemmas` | Include executability lemmas matching the selected classes |
+| `--no-lemmas` | Exclude lemmas (skips the interactive y/n prompt) |
 | `-v` | Debug logging |
+
+If neither `--lemmas` nor `--no-lemmas` is passed, the CLI asks interactively
+(`Include executability lemmas in the generated protocol? [y/N]`).
 
 ## Output
 
@@ -108,10 +113,15 @@ Each run writes:
 
 ```
 outputs/<protocol_name>/
-  protocol.spthy                         # combined SAPIC+ (no lemmas)
-  protocol-executability-lemmas/         # placeholder
+  protocol.spthy                         # combined SAPIC+
+  protocol-executability-lemmas/
+    lemmas.spthy                         # only if lemmas were requested; #include'd from protocol.spthy
   ReadMe
 ```
+
+Lemmas, when requested, are drawn from each selected class's own lemma file
+in `data/sapic_classes/lemmas/` (one per class, namespaced by class id to
+avoid name collisions) rather than generated fresh.
 
 ## Tests
 

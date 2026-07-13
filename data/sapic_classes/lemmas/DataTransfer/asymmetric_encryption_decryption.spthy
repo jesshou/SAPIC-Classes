@@ -1,0 +1,18 @@
+/* Lemmas for class `asymmetric_encryption_decryption` (data/sapic_classes/classes/2) DataTransfer/asymmetric_encryption_decryption.spthy). */
+
+lemma Client_session_key_secrecy:
+"
+    not(
+      Ex pKs psk #i #j.
+        SessKeyC(pKs, psk) @ #i
+        & K(psk) @ #j
+        & not(Ex #r. LtkReveal(pKs) @ r)
+    )
+  "
+
+lemma Client_session_key_honest_setup:
+exists-trace
+  " Ex pKs psk #i.
+      SessKeyC(pKs, psk) @ #i
+      & not(Ex #r. LtkReveal(pKs) @ r)
+  "

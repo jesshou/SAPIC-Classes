@@ -28,15 +28,6 @@ process:
 new psk;
 ( !Client(psk) | !Server(psk) )
 
-lemma executable:
-  exists-trace
-  "Ex mC mS #i #j #k #l.
-       Send('Client', 'Server', mC) @ #i
-     & Recv('Server', 'Client', mC) @ #j
-     & Send('Server', 'Client', mS) @ #k
-     & Recv('Client', 'Server', mS) @ #l
-     & #i < #j
-     & #j < #k
-     & #k < #l"
+#include "../../lemmas/DataTransfer/application_data_exchange.spthy"
 
 end

@@ -1,0 +1,5 @@
+/* Lemmas for class `nonce` (data/sapic_classes/classes/1) Startup/nonce.spthy). */
+
+lemma nonce_executable:
+    exists-trace
+    "Ex n #i. ClientNonce(n) @ i"

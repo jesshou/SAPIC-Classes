@@ -19,9 +19,6 @@ process:
 new psk;                        // shared symmetric key, generated once
 ( !Client(psk) | !Server(psk) )
 
-lemma decryption_exists:
-exists-trace
-"Ex m #i #j.
-    ClientSent(m) @ i & ServerReceived(m) @ j"
+#include "../../lemmas/DataTransfer/symmetric_encryption_decryption.spthy"
 
 end

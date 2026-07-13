@@ -1,0 +1,7 @@
+/* Lemmas for class `handshake_finished` (data/sapic_classes/classes/2) DataTransfer/handshake_finished.spthy). */
+
+lemma executable:
+  exists-trace
+  "Ex z #i #j.
+       ClientAccept(z) @ #i
+     & ServerAccept(z) @ #j"

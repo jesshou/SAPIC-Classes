@@ -1,0 +1,5 @@
+/* Lemmas for class `symmetric_key_generation` (data/sapic_classes/classes/1) Startup/symmetric_key_generation.spthy). */
+
+lemma psk_setup_reachable:
+  exists-trace
+  "Ex psk #i. PSKGenerated(psk) @ #i"

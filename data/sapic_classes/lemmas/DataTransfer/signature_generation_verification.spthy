@@ -1,0 +1,3 @@
+/* Lemmas for class `signature_generation_verification` (data/sapic_classes/classes/2) DataTransfer/signature_generation_verification.spthy). */
+
+lemma client_verify_exists: exists-trace "Ex pKs m #i. ClientVerify(pKs, m) @ #i"

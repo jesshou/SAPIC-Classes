@@ -18,8 +18,6 @@ new ~psk;                          // long-term pre-shared key, generated once a
 event PSKGenerated(~psk);
 ( !Client(~psk) | !Server(~psk) )
 
-lemma psk_setup_reachable:
-  exists-trace
-  "Ex psk #i. PSKGenerated(psk) @ #i"
+#include "../../lemmas/Startup/symmetric_key_generation.spthy"
 
 end

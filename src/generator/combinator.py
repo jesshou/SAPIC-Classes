@@ -64,6 +64,7 @@ class CombinedDraft:
     source: str = ""
     needs_rewrite: bool = True
     notes: list[str] = field(default_factory=list)
+    lemmas: str = ""
 
 
 def _extract_builtins(source: str) -> list[str]:
@@ -128,28 +129,76 @@ def _normalize_role_params(records: list[ClassRecord]) -> list[str]:
     return params
 
 
+def _split_trailing_comment(line: str) -> tuple[str, str]:
+    """Split a line into (code, ' // trailing comment'), so a `;` can be
+    inserted right after the code -- before any comment on the same line."""
+    m = re.match(r"^(.*?)(\s*//.*)?$", line)
+    code = (m.group(1) or "").rstrip()
+    comment = m.group(2) or ""
+    return code, comment
+
+
+def _clean_body(body: str) -> str:
+    """Normalize one role body for sequencing.
+
+    Strips a trailing `0` no-op placeholder line and any trailing
+    documentation-only comment lines, so the body ends at its real terminal
+    action with no dangling `;` (a fragment's last statement never has a
+    trailing `;` of its own -- see general_SAPIC+_instruction.md). Comments
+    on the terminal action's own line are kept, but the `;` needed later to
+    sequence into the next body must land before them, not after -- see
+    _sequence_bodies.
+    """
+    lines = body.strip().splitlines()
+    # Pop trailing blank / comment-only / bare-`0`-placeholder lines together,
+    # in whatever order they appear (e.g. `0` followed by a doc comment).
+    while lines:
+        code = _split_trailing_comment(lines[-1])[0].strip()
+        if code in ("", "0"):
+            lines.pop()
+            continue
+        break
+    if not lines:
+        return ""
+    code, comment = _split_trailing_comment(lines[-1])
+    lines[-1] = f"{code.rstrip(';').rstrip()}{comment}"
+    return "\n".join(lines)
+
+
+def _append_with_separator(acc: str, nxt: str) -> str:
+    """Append `nxt` after `acc`, inserting the `;` needed to sequence into it
+    right after acc's terminal code -- before any trailing inline comment on
+    that line -- so the comment can't swallow the separator and leave the
+    real statement unterminated."""
+    head, sep, last_line = acc.rpartition("\n")
+    prefix = head + sep
+    code, comment = _split_trailing_comment(last_line)
+    return f"{prefix}{code};{comment}\n    {nxt}"
+
+
 def _sequence_bodies(bodies: list[str]) -> str:
     """Join role step bodies with `;`, dropping trailing lone `0` placeholders."""
-    cleaned: list[str] = []
-    for body in bodies:
-        if body is None:
-            continue
-        b = body.strip().rstrip(";")
-        if not b or b == "0" or re.fullmatch(r"0\s*//.*", b):
-            continue
-        # Remove a trailing standalone 0 line (placeholder)
-        b = re.sub(r"(?m);\s*\n\s*0\s*(//.*)?\s*$", "", b)
-        b = re.sub(r"(?m)^\s*0\s*(//.*)?\s*$", "", b).strip().rstrip(";")
-        if b:
-            cleaned.append(b)
+    cleaned = [c for c in (_clean_body(b) for b in bodies if b is not None) if c]
     if not cleaned:
         return "0"
-    return ";\n    ".join(cleaned)
+    result = cleaned[0]
+    for nxt in cleaned[1:]:
+        result = _append_with_separator(result, nxt)
+    return result
+
+
+def _gather_lemmas(records: list[ClassRecord]) -> str:
+    """Namespaced lemma text for every record that has real lemmas,
+    joined for stitching into one theory (names prefixed by class id
+    to avoid collisions, e.g. two classes both defining `executable`)."""
+    parts = [rec.namespaced_lemmas() for rec in records if rec.has_lemmas()]
+    return "\n".join(p.strip() for p in parts if p.strip())
 
 
 def _deterministic_combine(
     theory_name: str,
     records: list[ClassRecord],
+    include_lemmas: bool = False,
 ) -> CombinedDraft:
     """
     Heuristic stitch: merge builtins, concatenate role bodies in phase order,
@@ -249,6 +298,8 @@ def _deterministic_combine(
         f"end\n"
     )
 
+    lemmas = _gather_lemmas(ordered) if include_lemmas else ""
+
     return CombinedDraft(
         theory_name=theory_name,
         class_ids=[r.id for r in ordered],
@@ -261,6 +312,7 @@ def _deterministic_combine(
         source=source,
         needs_rewrite=True,
         notes=notes,
+        lemmas=lemmas,
     )
 
 
@@ -268,12 +320,18 @@ def combine_classes(
     library: ClassLibrary,
     class_ids: list[str],
     theory_name: str = "CombinedProtocol",
+    include_lemmas: bool = False,
 ) -> CombinedDraft:
     """
     Combine multiple class IDs into a draft SAPIC+ theory.
 
     Single-class requests return the class source (lemmas stripped) and
     mark needs_rewrite=False. Multi-class requests always need rewrite.
+
+    When include_lemmas is True, each selected class's own lemmas (the
+    ones matching the classes already chosen for this protocol) are
+    gathered onto CombinedDraft.lemmas, namespaced by class id to avoid
+    name collisions; draft.source itself stays lemma-free either way.
     """
     # Preserve order but drop duplicates
     seen: set[str] = set()
@@ -296,14 +354,16 @@ def combine_classes(
             count=1,
             flags=re.MULTILINE,
         )
+        lemmas = rec.lemma_source.strip() + "\n" if include_lemmas and rec.has_lemmas() else ""
         return CombinedDraft(
             theory_name=theory_name,
             class_ids=[rec.id],
             builtins=_extract_builtins(src),
             source=src,
             needs_rewrite=False,
+            lemmas=lemmas,
             notes=[f"Direct 1-to-1 lookup of `{rec.id}`"],
         )
 
     logger.info("Combining classes: %s", ", ".join(unique_ids))
-    return _deterministic_combine(theory_name, records)
+    return _deterministic_combine(theory_name, records, include_lemmas=include_lemmas)

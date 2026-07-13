@@ -1,0 +1,5 @@
+/* Lemmas for class `client_hello` (data/sapic_classes/classes/2) DataTransfer/client_hello.spthy). */
+
+lemma exists_ClientHello:
+exists-trace
+  " Ex n #i. Receive_ClientHello(n) @ i "

@@ -12,8 +12,6 @@ let Client() =
 process:
 ( !Client() )
 
-lemma nonce_executable:
-    exists-trace
-    "Ex n #i. ClientNonce(n) @ i"
+#include "../../lemmas/Startup/nonce.spthy"
 
 end

@@ -12,8 +12,6 @@ let Client() =
 process:
 ( !Client() )
 
-lemma sessionID_executable:
-    exists-trace
-    "Ex cid #i. ClientSessionID(cid) @ i"
+#include "../../lemmas/Startup/sessionID.spthy"
 
 end

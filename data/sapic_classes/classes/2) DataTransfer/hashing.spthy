@@ -24,20 +24,6 @@ process:
   | !Server(psk) | (event KeyReveal(psk); out(psk)) )      // branch: leak psk
 )
 
-lemma Client_auth:
-"
-    All psk #i. SessKeyC(psk) @ #i
-      ==>
-       ( (Ex #a. AnswerRequest(psk) @ a)
-       | (Ex #r. KeyReveal(psk) @ r & r < i)
-       )
-  "
-
-lemma Client_session_key_honest_setup:
-exists-trace
-  " Ex psk #i.
-      SessKeyC(psk) @ #i
-      & not(Ex #r. KeyReveal(psk) @ r)
-  "
+#include "../../lemmas/DataTransfer/hashing.spthy"
 
 end

@@ -12,4 +12,6 @@ let Server() =
 process:
 ( !Client() | !Server() )
 
+#include "../../lemmas/Startup/setup.spthy"
+
 end

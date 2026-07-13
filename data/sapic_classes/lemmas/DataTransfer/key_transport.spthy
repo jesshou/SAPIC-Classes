@@ -1,0 +1,5 @@
+/* Lemmas for class `key_transport` (data/sapic_classes/classes/2) DataTransfer/key_transport.spthy). */
+
+lemma exists_trace:
+exists-trace
+"Ex psk #i #j. ClientKey(psk) @ i & ServerKey(psk) @ j"

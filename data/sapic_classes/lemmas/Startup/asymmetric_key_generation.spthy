@@ -1,0 +1,9 @@
+/* Lemmas for class `asymmetric_key_generation` (data/sapic_classes/classes/1) Startup/asymmetric_key_generation.spthy). */
+
+lemma setup_executable:
+    exists-trace
+    "Ex pKc #i. ClientInit(pKc) @ i"
+
+lemma server_setup_executable:
+    exists-trace
+    "Ex pKs #i. ServerInit(pKs) @ i"

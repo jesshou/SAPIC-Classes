@@ -30,9 +30,6 @@ process:
     ( !Server | !Client )
 
 
-lemma key_agreement_exists:
-exists-trace
-"Ex pKs pKc dhZ #i #j.
-    ServerKey(pKs, pKc, dhZ) @ i  & ClientKey(pKc, pKs, dhZ) @ j"
+#include "../../lemmas/DataTransfer/diffie_hellman_static.spthy"
 
 end

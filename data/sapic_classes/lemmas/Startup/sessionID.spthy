@@ -1,0 +1,5 @@
+/* Lemmas for class `sessionID` (data/sapic_classes/classes/1) Startup/sessionID.spthy). */
+
+lemma sessionID_executable:
+    exists-trace
+    "Ex cid #i. ClientSessionID(cid) @ i"

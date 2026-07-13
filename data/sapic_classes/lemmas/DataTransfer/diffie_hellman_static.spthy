@@ -1,0 +1,6 @@
+/* Lemmas for class `diffie_hellman_static` (data/sapic_classes/classes/2) DataTransfer/diffie_hellman_static.spthy). */
+
+lemma key_agreement_exists:
+exists-trace
+"Ex pKs pKc dhZ #i #j.
+    ServerKey(pKs, pKc, dhZ) @ i  & ClientKey(pKc, pKs, dhZ) @ j"

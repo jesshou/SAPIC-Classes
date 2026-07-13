@@ -22,6 +22,6 @@ let Client() =
 process:
 ( !Client() | !Server() )
 
-lemma client_verify_exists: exists-trace "Ex pKs m #i. ClientVerify(pKs, m) @ #i"
+#include "../../lemmas/DataTransfer/signature_generation_verification.spthy"
 
 end

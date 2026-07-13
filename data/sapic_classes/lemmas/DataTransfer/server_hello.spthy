@@ -1,0 +1,5 @@
+/* Lemmas for class `server_hello` (data/sapic_classes/classes/2) DataTransfer/server_hello.spthy). */
+
+lemma exists_ServerHello:
+exists-trace
+  " Ex n #i. ClientReceivedHello(n) @ i "

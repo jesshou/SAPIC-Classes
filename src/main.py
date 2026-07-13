@@ -51,6 +51,20 @@ def _read_input(args: argparse.Namespace) -> str:
     return "\n".join(lines).strip()
 
 
+def _resolve_include_lemmas(args: argparse.Namespace) -> bool:
+    if args.lemmas:
+        return True
+    if args.no_lemmas:
+        return False
+    try:
+        resp = input(
+            "Include executability lemmas in the generated protocol? [y/N]: "
+        ).strip().lower()
+    except EOFError:
+        resp = ""
+    return resp in ("y", "yes")
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="englishto-sapic",
@@ -90,6 +104,17 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="OpenAI model name (overrides OPENAI_MODEL).",
     )
+    lemma_group = p.add_mutually_exclusive_group()
+    lemma_group.add_argument(
+        "--lemmas",
+        action="store_true",
+        help="Include executability lemmas matching the selected classes.",
+    )
+    lemma_group.add_argument(
+        "--no-lemmas",
+        action="store_true",
+        help="Exclude lemmas (skips the interactive y/n prompt).",
+    )
     p.add_argument(
         "-v",
         "--verbose",
@@ -107,6 +132,9 @@ def run(args: argparse.Namespace) -> int:
     if not english:
         logger.error("No English description provided.")
         return 1
+
+    include_lemmas = _resolve_include_lemmas(args)
+    logger.info("Include lemmas: %s", include_lemmas)
 
     library = load_library(LIBRARY_DIR)
     client = None if args.no_llm else OpenAIClient(model=args.model)
@@ -160,7 +188,9 @@ def run(args: argparse.Namespace) -> int:
     if not ordered_ids:
         ordered_ids = ["setup"]
 
-    draft = combine_classes(library, ordered_ids, theory_name=theory_name)
+    draft = combine_classes(
+        library, ordered_ids, theory_name=theory_name, include_lemmas=include_lemmas
+    )
     for note in draft.notes:
         logger.debug("%s", note)
 
@@ -188,11 +218,15 @@ def run(args: argparse.Namespace) -> int:
         sapic_source=source,
         matches=classification.matches,
         validation=validation,
+        lemmas=draft.lemmas,
     )
 
     print(f"\nWrote SAPIC+ model to: {paths.root}")
     print(f"  protocol.spthy")
-    print(f"  protocol-executability-lemmas/  (placeholder, no lemmas yet)")
+    if draft.lemmas.strip():
+        print(f"  protocol-executability-lemmas/lemmas.spthy  (#include'd into protocol.spthy)")
+    else:
+        print(f"  protocol-executability-lemmas/  (no lemmas generated this run)")
     print(f"  ReadMe")
     return 0 if validation.ok else 2
 

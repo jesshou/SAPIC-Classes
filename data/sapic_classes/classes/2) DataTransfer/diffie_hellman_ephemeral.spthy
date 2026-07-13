@@ -28,24 +28,6 @@ let Server() =
 process:
 ( !Client() | !Server() )
 
-lemma server_received_client_key:
-  exists-trace
-  "Ex ePKc #i #j.
-      ServerRecvGX(ePKc) @ #i
-      & ClientSentGX(ePKc) @ #j
-      & #j < #i"
-
-lemma client_received_server_key:
-  exists-trace
-  "Ex ePKs #i #j.
-      ClientRecvGY(ePKs) @ #i
-      & ServerSentGY(ePKs) @ #j
-      & #j < #i"
-
-lemma keys_match:
-  "All ePKc ePKs dhZ1 dhZ2 #i #j.
-      SessKey('Client', ePKc, ePKs, dhZ1) @ #i &
-      SessKey('Server', ePKc, ePKs, dhZ2) @ #j
-      ==> dhZ1 = dhZ2"
+#include "../../lemmas/DataTransfer/diffie_hellman_ephemeral.spthy"
 
 end

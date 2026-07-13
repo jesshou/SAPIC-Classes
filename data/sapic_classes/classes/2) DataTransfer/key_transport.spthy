@@ -22,8 +22,6 @@ let Server() =
 process:
 ( !Client() | !Server() )
 
-lemma exists_trace:
-exists-trace
-"Ex psk #i #j. ClientKey(psk) @ i & ServerKey(psk) @ j"
+#include "../../lemmas/DataTransfer/key_transport.spthy"
 
 end

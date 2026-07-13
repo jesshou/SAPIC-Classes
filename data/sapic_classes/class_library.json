@@ -1,14 +1,19 @@
 {
   "version": "1.0",
   "naming_conventions": {
-    "roles": {"client_suffix": "c", "server_suffix": "s"},
+    "roles": {
+      "client_suffix": "c",
+      "server_suffix": "s"
+    },
     "asymmetric_keys": {
       "client_public": "pKc",
       "server_public": "pKs",
       "client_long_term_private": "ltKc",
       "server_long_term_private": "ltKs"
     },
-    "symmetric_keys": {"shared": "psk"},
+    "symmetric_keys": {
+      "shared": "psk"
+    },
     "diffie_hellman": {
       "client_ephemeral_secret": "eKc",
       "server_ephemeral_secret": "eKs",
@@ -16,9 +21,18 @@
       "server_ephemeral_public": "ePKs",
       "shared_secret": "dhZ"
     },
-    "nonces": {"nonce": "n"},
-    "messages": {"single": "m", "client": "mC", "server": "mS"},
-    "ciphertext": {"client": "xencC", "server": "xencS"}
+    "nonces": {
+      "nonce": "n"
+    },
+    "messages": {
+      "single": "m",
+      "client": "mC",
+      "server": "mS"
+    },
+    "ciphertext": {
+      "client": "xencC",
+      "server": "xencS"
+    }
   },
   "classes": [
     {
@@ -28,24 +42,52 @@
       "file": "classes/1) Startup/setup.spthy",
       "builtins": [],
       "parameters": [],
-      "keywords": ["setup", "skeleton", "initialize", "start", "bootstrap", "empty roles"],
+      "keywords": [
+        "setup",
+        "skeleton",
+        "initialize",
+        "start",
+        "bootstrap",
+        "empty roles"
+      ],
       "description": "Bare-minimum Client/Server skeleton with empty 0 bodies. Use as starting scaffold.",
       "combinable": true,
-      "provides": ["Client", "Server"],
-      "requires": []
+      "provides": [
+        "Client",
+        "Server"
+      ],
+      "requires": [],
+      "lemma_file": "lemmas/Startup/setup.spthy"
     },
     {
       "id": "asymmetric_key_generation",
       "name": "Asymmetric Key Generation",
       "phase": "Startup",
       "file": "classes/1) Startup/asymmetric_key_generation.spthy",
-      "builtins": ["asymmetric-encryption"],
+      "builtins": [
+        "asymmetric-encryption"
+      ],
       "parameters": [],
-      "keywords": ["asymmetric key", "keypair", "public key", "private key", "long-term key", "generate keys", "pk", "ltk"],
+      "keywords": [
+        "asymmetric key",
+        "keypair",
+        "public key",
+        "private key",
+        "long-term key",
+        "generate keys",
+        "pk",
+        "ltk"
+      ],
       "description": "Client and Server each generate a long-term asymmetric keypair and announce public keys via ClientInit/ServerInit.",
       "combinable": true,
-      "provides": ["ltKc", "pKc", "ltKs", "pKs"],
-      "requires": []
+      "provides": [
+        "ltKc",
+        "pKc",
+        "ltKs",
+        "pKs"
+      ],
+      "requires": [],
+      "lemma_file": "lemmas/Startup/asymmetric_key_generation.spthy"
     },
     {
       "id": "symmetric_key_generation",
@@ -53,12 +95,23 @@
       "phase": "Startup",
       "file": "classes/1) Startup/symmetric_key_generation.spthy",
       "builtins": [],
-      "parameters": ["psk"],
-      "keywords": ["symmetric key", "psk", "pre-shared key", "shared secret", "generate psk"],
+      "parameters": [
+        "psk"
+      ],
+      "keywords": [
+        "symmetric key",
+        "psk",
+        "pre-shared key",
+        "shared secret",
+        "generate psk"
+      ],
       "description": "Shared long-term PSK generated once in process: and threaded into Client/Server roles.",
       "combinable": true,
-      "provides": ["psk"],
-      "requires": []
+      "provides": [
+        "psk"
+      ],
+      "requires": [],
+      "lemma_file": "lemmas/Startup/symmetric_key_generation.spthy"
     },
     {
       "id": "nonce",
@@ -67,11 +120,20 @@
       "file": "classes/1) Startup/nonce.spthy",
       "builtins": [],
       "parameters": [],
-      "keywords": ["nonce", "fresh value", "random", "anti-replay", "freshness"],
+      "keywords": [
+        "nonce",
+        "fresh value",
+        "random",
+        "anti-replay",
+        "freshness"
+      ],
       "description": "Client generates a fresh nonce with ClientNonce event.",
       "combinable": true,
-      "provides": ["n"],
-      "requires": []
+      "provides": [
+        "n"
+      ],
+      "requires": [],
+      "lemma_file": "lemmas/Startup/nonce.spthy"
     },
     {
       "id": "sessionID",
@@ -80,11 +142,20 @@
       "file": "classes/1) Startup/sessionID.spthy",
       "builtins": [],
       "parameters": [],
-      "keywords": ["session id", "session identifier", "correlation", "cid", "session label"],
+      "keywords": [
+        "session id",
+        "session identifier",
+        "correlation",
+        "cid",
+        "session label"
+      ],
       "description": "Client generates a fresh session/correlation identifier.",
       "combinable": true,
-      "provides": ["cid"],
-      "requires": []
+      "provides": [
+        "cid"
+      ],
+      "requires": [],
+      "lemma_file": "lemmas/Startup/sessionID.spthy"
     },
     {
       "id": "client_hello",
@@ -93,11 +164,19 @@
       "file": "classes/2) DataTransfer/client_hello.spthy",
       "builtins": [],
       "parameters": [],
-      "keywords": ["client hello", "clienthello", "handshake start", "client random"],
+      "keywords": [
+        "client hello",
+        "clienthello",
+        "handshake start",
+        "client random"
+      ],
       "description": "Client sends a fresh client-random nonce; Server receives it.",
       "combinable": true,
-      "provides": ["n"],
-      "requires": []
+      "provides": [
+        "n"
+      ],
+      "requires": [],
+      "lemma_file": "lemmas/DataTransfer/client_hello.spthy"
     },
     {
       "id": "server_hello",
@@ -106,141 +185,300 @@
       "file": "classes/2) DataTransfer/server_hello.spthy",
       "builtins": [],
       "parameters": [],
-      "keywords": ["server hello", "serverhello", "server random"],
+      "keywords": [
+        "server hello",
+        "serverhello",
+        "server random"
+      ],
       "description": "Server sends a fresh server-random nonce; Client receives it.",
       "combinable": true,
-      "provides": ["n"],
-      "requires": []
+      "provides": [
+        "n"
+      ],
+      "requires": [],
+      "lemma_file": "lemmas/DataTransfer/server_hello.spthy"
     },
     {
       "id": "diffie_hellman_ephemeral",
       "name": "Ephemeral Diffie-Hellman",
       "phase": "DataTransfer",
       "file": "classes/2) DataTransfer/diffie_hellman_ephemeral.spthy",
-      "builtins": ["diffie-hellman"],
+      "builtins": [
+        "diffie-hellman"
+      ],
       "parameters": [],
-      "keywords": ["diffie-hellman", "dh", "ephemeral", "forward secrecy", "key exchange", "g^x", "shared secret"],
+      "keywords": [
+        "diffie-hellman",
+        "dh",
+        "ephemeral",
+        "forward secrecy",
+        "key exchange",
+        "g^x",
+        "shared secret"
+      ],
       "description": "Fresh per-session DH exchange; each party picks a new exponent and derives shared key dhZ.",
       "combinable": true,
-      "provides": ["eKc", "eKs", "ePKc", "ePKs", "dhZ"],
-      "requires": []
+      "provides": [
+        "eKc",
+        "eKs",
+        "ePKc",
+        "ePKs",
+        "dhZ"
+      ],
+      "requires": [],
+      "lemma_file": "lemmas/DataTransfer/diffie_hellman_ephemeral.spthy"
     },
     {
       "id": "diffie_hellman_static",
       "name": "Static Diffie-Hellman",
       "phase": "DataTransfer",
       "file": "classes/2) DataTransfer/diffie_hellman_static.spthy",
-      "builtins": ["diffie-hellman"],
+      "builtins": [
+        "diffie-hellman"
+      ],
       "parameters": [],
-      "keywords": ["static dh", "static diffie-hellman", "long-term dh", "no forward secrecy"],
+      "keywords": [
+        "static dh",
+        "static diffie-hellman",
+        "long-term dh",
+        "no forward secrecy"
+      ],
       "description": "Static long-term DH exchange; exponents reused across sessions (no forward secrecy).",
       "combinable": true,
-      "provides": ["ltKc", "ltKs", "pKc", "pKs", "dhZ"],
-      "requires": []
+      "provides": [
+        "ltKc",
+        "ltKs",
+        "pKc",
+        "pKs",
+        "dhZ"
+      ],
+      "requires": [],
+      "lemma_file": "lemmas/DataTransfer/diffie_hellman_static.spthy"
     },
     {
       "id": "key_transport",
       "name": "Key Transport",
       "phase": "DataTransfer",
       "file": "classes/2) DataTransfer/key_transport.spthy",
-      "builtins": ["asymmetric-encryption"],
+      "builtins": [
+        "asymmetric-encryption"
+      ],
       "parameters": [],
-      "keywords": ["key transport", "send key", "encrypt key", "aenc key", "session key transport"],
+      "keywords": [
+        "key transport",
+        "send key",
+        "encrypt key",
+        "aenc key",
+        "session key transport"
+      ],
       "description": "Client generates fresh key psk and sends it encrypted under Server's public key.",
       "combinable": true,
-      "provides": ["psk"],
-      "requires": ["pKs"]
+      "provides": [
+        "psk"
+      ],
+      "requires": [
+        "pKs"
+      ],
+      "lemma_file": "lemmas/DataTransfer/key_transport.spthy"
     },
     {
       "id": "HKDF",
       "name": "HKDF Key Derivation",
       "phase": "DataTransfer",
       "file": "classes/2) DataTransfer/HKDF.spthy",
-      "builtins": ["diffie-hellman", "hashing", "symmetric-encryption"],
-      "parameters": ["psk"],
-      "keywords": ["hkdf", "key derivation", "extract", "expand", "okm", "prk", "tls 1.3"],
+      "builtins": [
+        "diffie-hellman",
+        "hashing",
+        "symmetric-encryption"
+      ],
+      "parameters": [
+        "psk"
+      ],
+      "keywords": [
+        "hkdf",
+        "key derivation",
+        "extract",
+        "expand",
+        "okm",
+        "prk",
+        "tls 1.3"
+      ],
       "description": "Derives session key via HKDF from ephemeral DH secret dhZ combined with long-term PSK.",
       "combinable": true,
-      "provides": ["OKM", "PRK", "dhZ"],
-      "requires": ["psk"]
+      "provides": [
+        "OKM",
+        "PRK",
+        "dhZ"
+      ],
+      "requires": [
+        "psk"
+      ],
+      "lemma_file": "lemmas/DataTransfer/HKDF.spthy"
     },
     {
       "id": "signature_generation_verification",
       "name": "Signature Generation and Verification",
       "phase": "DataTransfer",
       "file": "classes/2) DataTransfer/signature_generation_verification.spthy",
-      "builtins": ["signing"],
+      "builtins": [
+        "signing"
+      ],
       "parameters": [],
-      "keywords": ["signature", "sign", "verify", "authentication", "digital signature"],
+      "keywords": [
+        "signature",
+        "sign",
+        "verify",
+        "authentication",
+        "digital signature"
+      ],
       "description": "Server signs a message; Client verifies the signature.",
       "combinable": true,
       "provides": [],
-      "requires": []
+      "requires": [],
+      "lemma_file": "lemmas/DataTransfer/signature_generation_verification.spthy"
     },
     {
       "id": "asymmetric_encryption_decryption",
       "name": "Asymmetric Encryption/Decryption",
       "phase": "DataTransfer",
       "file": "classes/2) DataTransfer/asymmetric_encryption_decryption.spthy",
-      "builtins": ["asymmetric-encryption"],
-      "parameters": ["ltKc", "pKs", "ltKs"],
-      "keywords": ["asymmetric encryption", "public key encryption", "aenc", "adec", "confidential transport"],
+      "builtins": [
+        "asymmetric-encryption"
+      ],
+      "parameters": [
+        "ltKc",
+        "pKs",
+        "ltKs"
+      ],
+      "keywords": [
+        "asymmetric encryption",
+        "public key encryption",
+        "aenc",
+        "adec",
+        "confidential transport"
+      ],
       "description": "Client transports session key to Server via public-key encryption with LtkReveal compromise modeling.",
       "combinable": true,
-      "provides": ["psk"],
-      "requires": ["ltKc", "pKs", "ltKs"]
+      "provides": [
+        "psk"
+      ],
+      "requires": [
+        "ltKc",
+        "pKs",
+        "ltKs"
+      ],
+      "lemma_file": "lemmas/DataTransfer/asymmetric_encryption_decryption.spthy"
     },
     {
       "id": "hashing",
       "name": "Hashing / Key Confirmation",
       "phase": "DataTransfer",
       "file": "classes/2) DataTransfer/hashing.spthy",
-      "builtins": ["hashing"],
-      "parameters": ["psk"],
-      "keywords": ["hash", "hashing", "h(k)", "key confirmation", "proof of possession"],
+      "builtins": [
+        "hashing"
+      ],
+      "parameters": [
+        "psk"
+      ],
+      "keywords": [
+        "hash",
+        "hashing",
+        "h(k)",
+        "key confirmation",
+        "proof of possession"
+      ],
       "description": "Server proves possession of psk by sending h(psk); Client checks the hash.",
       "combinable": true,
       "provides": [],
-      "requires": ["psk"]
+      "requires": [
+        "psk"
+      ],
+      "lemma_file": "lemmas/DataTransfer/hashing.spthy"
     },
     {
       "id": "handshake_finished",
       "name": "Handshake Finished",
       "phase": "DataTransfer",
       "file": "classes/2) DataTransfer/handshake_finished.spthy",
-      "builtins": ["diffie-hellman", "hashing"],
+      "builtins": [
+        "diffie-hellman",
+        "hashing"
+      ],
       "parameters": [],
-      "keywords": ["finished", "handshake finished", "key confirmation", "tls finished", "accept"],
+      "keywords": [
+        "finished",
+        "handshake finished",
+        "key confirmation",
+        "tls finished",
+        "accept"
+      ],
       "description": "TLS-style Finished step: DH exchange plus hash-based finished confirmations before accept.",
       "combinable": true,
-      "provides": ["dhZ"],
-      "requires": []
+      "provides": [
+        "dhZ"
+      ],
+      "requires": [],
+      "lemma_file": "lemmas/DataTransfer/handshake_finished.spthy"
     },
     {
       "id": "symmetric_encryption_decryption",
       "name": "Symmetric Encryption/Decryption",
       "phase": "DataTransfer",
       "file": "classes/2) DataTransfer/symmetric_encryption_decryption.spthy",
-      "builtins": ["symmetric-encryption"],
-      "parameters": ["psk"],
-      "keywords": ["symmetric encryption", "senc", "sdec", "encrypt message", "decrypt message", "encrypts a message", "encrypts a fresh message", "shared symmetric key and the server decrypts"],
+      "builtins": [
+        "symmetric-encryption"
+      ],
+      "parameters": [
+        "psk"
+      ],
+      "keywords": [
+        "symmetric encryption",
+        "senc",
+        "sdec",
+        "encrypt message",
+        "decrypt message",
+        "encrypts a message",
+        "encrypts a fresh message",
+        "shared symmetric key and the server decrypts"
+      ],
       "description": "Client encrypts a fresh message under shared key; Server decrypts.",
       "combinable": true,
-      "provides": ["m"],
-      "requires": ["psk"]
+      "provides": [
+        "m"
+      ],
+      "requires": [
+        "psk"
+      ],
+      "lemma_file": "lemmas/DataTransfer/symmetric_encryption_decryption.spthy"
     },
     {
       "id": "application_data_exchange",
       "name": "Application Data Exchange",
       "phase": "DataTransfer",
       "file": "classes/2) DataTransfer/application_data_exchange.spthy",
-      "builtins": ["symmetric-encryption"],
-      "parameters": ["psk"],
-      "keywords": ["application data", "message exchange", "bidirectional", "send receive", "transport"],
+      "builtins": [
+        "symmetric-encryption"
+      ],
+      "parameters": [
+        "psk"
+      ],
+      "keywords": [
+        "application data",
+        "message exchange",
+        "bidirectional",
+        "send receive",
+        "transport"
+      ],
       "description": "Post-handshake bidirectional application data under shared key psk.",
       "combinable": true,
-      "provides": ["mC", "mS"],
-      "requires": ["psk"]
+      "provides": [
+        "mC",
+        "mS"
+      ],
+      "requires": [
+        "psk"
+      ],
+      "lemma_file": "lemmas/DataTransfer/application_data_exchange.spthy"
     },
     {
       "id": "closing",
@@ -249,12 +487,24 @@
       "file": "classes/3) Cleanup/closing.spthy",
       "builtins": [],
       "parameters": [],
-      "keywords": ["close", "closing", "teardown", "cleanup", "revoke", "end session"],
+      "keywords": [
+        "close",
+        "closing",
+        "teardown",
+        "cleanup",
+        "revoke",
+        "end session"
+      ],
       "description": "Bare Client/Server skeleton for teardown phase.",
       "combinable": true,
       "provides": [],
-      "requires": []
+      "requires": [],
+      "lemma_file": "lemmas/Cleanup/closing.spthy"
     }
   ],
-  "phase_order": ["Startup", "DataTransfer", "Cleanup"]
+  "phase_order": [
+    "Startup",
+    "DataTransfer",
+    "Cleanup"
+  ]
 }

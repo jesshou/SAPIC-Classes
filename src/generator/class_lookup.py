@@ -26,10 +26,29 @@ class ClassRecord:
     provides: list[str]
     requires: list[str]
     source: str
+    lemma_file: str = ""
+    lemma_source: str = ""
 
     def body_without_lemmas(self) -> str:
         """Return theory source with lemma blocks stripped."""
         return strip_lemmas(self.source)
+
+    def has_lemmas(self) -> bool:
+        """Whether lemma_source contains an actual `lemma` declaration
+        (vs. a placeholder comment for classes with no meaningful property)."""
+        return bool(re.search(r"(?m)^lemma\s+\w+", self.lemma_source))
+
+    def namespaced_lemmas(self) -> str:
+        """Lemma text with each `lemma <name>:` prefixed by this class's id,
+        so lemmas from different classes can't collide by name when stitched
+        into one theory."""
+        if not self.has_lemmas():
+            return ""
+        return re.sub(
+            r"(?m)^lemma\s+(\w+)",
+            rf"lemma {self.id}_\1",
+            self.lemma_source.strip(),
+        ) + "\n"
 
 
 @dataclass
@@ -58,7 +77,7 @@ _LEMMA_RE = re.compile(
 
 
 def strip_lemmas(source: str) -> str:
-    """Remove lemma declarations from a .spthy fragment (lemmas deferred)."""
+    """Remove lemma declarations (and their #include) from a .spthy fragment."""
     # Remove lemma ... blocks up to next lemma or end
     lines = source.splitlines(keepends=True)
     out: list[str] = []
@@ -66,6 +85,11 @@ def strip_lemmas(source: str) -> str:
     for line in lines:
         if re.match(r"^lemma\s+\w+", line):
             skipping = True
+            continue
+        # Library classes #include their externalized lemma file (see
+        # data/sapic_classes/lemmas/); that path is only valid relative to
+        # the class file's own location, so drop it from generated output.
+        if re.match(r'^#include\s+"', line):
             continue
         if skipping:
             # lemmas end when we hit a blank-line-followed-by-non-lemma top-level
@@ -105,6 +129,10 @@ def load_library(library_dir: Path | str) -> ClassLibrary:
         rel = entry["file"]
         source_path = root / rel
         source = read_text(source_path)
+
+        lemma_rel = entry.get("lemma_file", "")
+        lemma_source = read_text(root / lemma_rel) if lemma_rel else ""
+
         rec = ClassRecord(
             id=entry["id"],
             name=entry["name"],
@@ -118,6 +146,8 @@ def load_library(library_dir: Path | str) -> ClassLibrary:
             provides=list(entry.get("provides", [])),
             requires=list(entry.get("requires", [])),
             source=source,
+            lemma_file=lemma_rel,
+            lemma_source=lemma_source,
         )
         by_id[rec.id] = rec
 

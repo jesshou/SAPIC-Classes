@@ -45,7 +45,11 @@ Hard requirements (from general SAPIC+ instructions):
     Client and Server, keep it as a parameter on both merged roles and hoist its
     `new` into the combined theory's single `process:` block. Never `new` it
     inside only one role — the other role's use of it will be unbound.
-13. Return ONLY the SAPIC+ theory source, no markdown fences or commentary.
+13. Preserve every `event Name(...)` fact's name and argument order exactly as
+    written in each source fragment — do not rename or reshape them. Each
+    fragment's own executability lemmas (kept separately, not shown here) refer
+    to these events by name; renaming one silently breaks that lemma.
+14. Return ONLY the SAPIC+ theory source, no markdown fences or commentary.
 """
 
 

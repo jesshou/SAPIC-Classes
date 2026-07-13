@@ -19,8 +19,6 @@ let Server =
 process:
       ( !Client | !Server )
 
-lemma exists_ClientHello:
-exists-trace
-  " Ex n #i. Receive_ClientHello(n) @ i "
+#include "../../lemmas/DataTransfer/client_hello.spthy"
 
 end

@@ -20,12 +20,6 @@ let Server() =
 process:
 ( !Client() | !Server() )
 
-lemma setup_executable:
-    exists-trace
-    "Ex pKc #i. ClientInit(pKc) @ i"
-
-lemma server_setup_executable:
-    exists-trace
-    "Ex pKs #i. ServerInit(pKs) @ i"
+#include "../../lemmas/Startup/asymmetric_key_generation.spthy"
 
 end

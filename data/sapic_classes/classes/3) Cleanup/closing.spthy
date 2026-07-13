@@ -9,4 +9,6 @@ let Server() = 0   // no-op placeholder
 process:
 ( !Client() | !Server() )
 
+#include "../../lemmas/Cleanup/closing.spthy"
+
 end

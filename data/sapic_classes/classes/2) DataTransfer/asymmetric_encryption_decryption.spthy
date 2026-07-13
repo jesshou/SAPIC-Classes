@@ -28,21 +28,6 @@ process:
   )
 )
 
-lemma Client_session_key_secrecy:
-"
-    not(
-      Ex pKs psk #i #j.
-        SessKeyC(pKs, psk) @ #i
-        & K(psk) @ #j
-        & not(Ex #r. LtkReveal(pKs) @ r)
-    )
-  "
-
-lemma Client_session_key_honest_setup:
-exists-trace
-  " Ex pKs psk #i.
-      SessKeyC(pKs, psk) @ #i
-      & not(Ex #r. LtkReveal(pKs) @ r)
-  "
+#include "../../lemmas/DataTransfer/asymmetric_encryption_decryption.spthy"
 
 end

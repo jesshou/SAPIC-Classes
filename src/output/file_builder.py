@@ -39,6 +39,18 @@ def _render_class_mapping(matches: list[ClassMatch]) -> str:
     return "\n".join(lines) if lines else "_No mappings._"
 
 
+def _attach_lemmas_include(sapic_source: str, include_rel: str) -> str:
+    """Insert `#include "<include_rel>"` right before the theory's final `end`."""
+    text = sapic_source.rstrip() + "\n"
+    new_text, n = re.subn(
+        r"\nend\s*$",
+        f'\n#include "{include_rel}"\n\nend\n',
+        text,
+        count=1,
+    )
+    return new_text if n else text
+
+
 def build_output(
     *,
     outputs_dir: Path | str,
@@ -47,6 +59,7 @@ def build_output(
     sapic_source: str,
     matches: list[ClassMatch],
     validation: ValidationResult,
+    lemmas: str = "",
     readme_template_src: Path | str | None = None,
 ) -> OutputPaths:
     """
@@ -54,19 +67,34 @@ def build_output(
 
         outputs/<protocol_name>/
           protocol.spthy
-          protocol-executability-lemmas/   (placeholder)
+          protocol-executability-lemmas/   (lemmas.spthy + README, or placeholder)
           ReadMe
     """
     root = ensure_dir(Path(outputs_dir) / _slugify(protocol_name))
     lemmas_dir = ensure_dir(root / "protocol-executability-lemmas")
-    write_text(
-        lemmas_dir / "README.md",
-        (
-            "# protocol-executability-lemmas\n\n"
-            "Placeholder for shared/reusable executability lemmas.\n"
-            "Lemmas are not generated yet.\n"
-        ),
-    )
+
+    lemmas = lemmas.strip()
+    if lemmas:
+        write_text(lemmas_dir / "lemmas.spthy", lemmas + "\n")
+        write_text(
+            lemmas_dir / "README.md",
+            (
+                "# protocol-executability-lemmas\n\n"
+                "Executability lemmas for this protocol, drawn from the matching\n"
+                "SAPIC+ classes and included into `protocol.spthy` via `#include`.\n"
+            ),
+        )
+        sapic_source = _attach_lemmas_include(
+            sapic_source, "protocol-executability-lemmas/lemmas.spthy"
+        )
+    else:
+        write_text(
+            lemmas_dir / "README.md",
+            (
+                "# protocol-executability-lemmas\n\n"
+                "No lemmas were generated for this run.\n"
+            ),
+        )
 
     protocol_spthy = write_text(root / "protocol.spthy", sapic_source)
 

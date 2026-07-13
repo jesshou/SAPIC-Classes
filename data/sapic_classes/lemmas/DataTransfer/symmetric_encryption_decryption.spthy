@@ -1,0 +1,6 @@
+/* Lemmas for class `symmetric_encryption_decryption` (data/sapic_classes/classes/2) DataTransfer/symmetric_encryption_decryption.spthy). */
+
+lemma decryption_exists:
+exists-trace
+"Ex m #i #j.
+    ClientSent(m) @ i & ServerReceived(m) @ j"

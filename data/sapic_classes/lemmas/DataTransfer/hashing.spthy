@@ -1,0 +1,17 @@
+/* Lemmas for class `hashing` (data/sapic_classes/classes/2) DataTransfer/hashing.spthy). */
+
+lemma Client_auth:
+"
+    All psk #i. SessKeyC(psk) @ #i
+      ==>
+       ( (Ex #a. AnswerRequest(psk) @ a)
+       | (Ex #r. KeyReveal(psk) @ r & r < i)
+       )
+  "
+
+lemma Client_session_key_honest_setup:
+exists-trace
+  " Ex psk #i.
+      SessKeyC(psk) @ #i
+      & not(Ex #r. KeyReveal(psk) @ r)
+  "
