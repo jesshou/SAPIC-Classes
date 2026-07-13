@@ -13,7 +13,6 @@ from src.parser.sentence_splitter import split_sentences
 
 PROJECT = Path(__file__).resolve().parents[1]
 LIBRARY = load_library(PROJECT / "data" / "sapic_classes")
-SYNTAX = PROJECT / "data" / "general_SAPIC+_instruction.md"
 
 
 def test_strip_lemmas_removes_lemma_blocks():
@@ -93,11 +92,9 @@ def test_end_to_end_no_llm(tmp_path: Path):
         sapic_source=draft.source,
         matches=classification.matches,
         validation=result,
-        syntax_instructions_src=SYNTAX,
     )
     assert paths.protocol_spthy.exists()
     assert paths.readme.exists()
-    assert paths.syntax_instructions.exists()
     assert (paths.lemmas_dir / "README.md").exists()
     content = paths.protocol_spthy.read_text()
     assert "lemma " not in content
