@@ -1,0 +1,25 @@
+theory symmetric_key_generation
+begin
+
+/* Stub: a shared long-term PSK is generated once and passed to
+   Client/Server, whose bodies are not yet implemented.
+   NOTE: `let Client()`/`let Server()` take no parameters here, but the
+   process below calls them as `Client(~psk)`/`Server(~psk)` - check this
+   arity mismatch before building on top of this file. */
+
+let Client() =
+    0   // no-op placeholder
+
+let Server() =
+    0   // no-op placeholder
+
+process:
+new ~psk;                          // long-term pre-shared key, generated once and shared out-of-band
+event PSKGenerated(~psk);
+( !Client(~psk) | !Server(~psk) )
+
+lemma psk_setup_reachable:
+  exists-trace
+  "Ex psk #i. PSKGenerated(psk) @ #i"
+
+end

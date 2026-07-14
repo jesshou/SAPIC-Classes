@@ -1,0 +1,102 @@
+theory NSPK_English_Translation
+begin
+
+builtins: asymmetric-encryption
+
+/* Roles
+   - Alice(ltKa, pKb): Initiator with private key ltKa talking to Bob's public key pKb.
+   - Bob(ltKb, pKa):   Responder with private key ltKb talking to Alice's public key pKa.
+
+   Messages
+   1) A -> B: aenc(<pk(ltKa), Na>, pKb)
+   2) B -> A: aenc(<Na, Nb>, pKa)
+   3) A -> B: aenc(Nb, pKb)
+
+   Security intent (modeled by events/lemmas)
+   - Secrecy of nonces Na, Nb unless a long-term key is compromised.
+   - A basic authentication: If Bob commits on (A,B,Na,Nb), then there was an
+     earlier start by Alice with the same (A,B,Na) (or a long-term key was revealed).
+*/
+
+let Alice(ltKa, pKb) =
+    new Na;
+    let pKa = pk(ltKa) in
+    event AliceStart(pKa, pKb, Na);
+    out(aenc(<pKa, Na>, pKb));
+    in(c2);
+    let <Na2, Nb> = adec(c2, ltKa) in
+    if Na2 = Na then
+      event AliceAccept(pKa, pKb, Na, Nb);
+      out(aenc(Nb, pKb));
+      event AliceCommit(pKa, pKb, Na, Nb);
+      event Secret('Na', pKa, pKb, Na);
+      event Secret('Nb', pKa, pKb, Nb)
+    else
+      0
+
+let Bob(ltKb, pKa) =
+    let pKb = pk(ltKb) in
+    in(c1);
+    let <pKaR, Na> = adec(c1, ltKb) in
+    new Nb;
+    event BobRunning(pKb, pKaR, Na, Nb);
+    out(aenc(<Na, Nb>, pKaR));
+    in(c3);
+    let Nb2 = adec(c3, ltKb) in
+    if Nb2 = Nb then
+      event BobCommit(pKb, pKaR, Na, Nb)
+    else
+      0
+
+let Compromise(ltK) =
+    event RevLtk(pk(ltK));
+    out(ltK)
+
+process:
+!(
+  new ltKa; let pKa = pk(ltKa) in out(pKa); event HonestA(pKa);
+  !(
+    new ltKb; let pKb = pk(ltKb) in out(pKb); event HonestB(pKb);
+    (
+        Compromise(ltKa) | Compromise(ltKb)
+      | ( !Alice(ltKa, pKb) | !Bob(ltKb, pKa) )
+    )
+  )
+)
+
+/* Lemmas */
+
+/* Executability: There exists a trace where both parties reach their commits. */
+lemma executable:
+  exists-trace
+  "Ex A B Na Nb #i #j.
+      AliceCommit(A, B, Na, Nb) @ #i
+    & BobCommit(B, A, Na, Nb) @ #j
+    & #i < #j"
+
+/* Secrecy of nonces (conditioned on no long-term key reveal). */
+lemma secrecy_Na:
+  "All A B Na Nb #i.
+      AliceCommit(A, B, Na, Nb) @ #i
+    ==> (not (Ex #k. K(Na) @ #k))
+        | (Ex #r. RevLtk(A) @ #r)
+        | (Ex #r. RevLtk(B) @ #r)"
+
+lemma secrecy_Nb:
+  "All A B Na Nb #i.
+      BobCommit(B, A, Na, Nb) @ #i
+    ==> (not (Ex #k. K(Nb) @ #k))
+        | (Ex #r. RevLtk(A) @ #r)
+        | (Ex #r. RevLtk(B) @ #r)"
+
+/* Basic authentication from Bob's point of view:
+   If Bob commits on (B,A,Na,Nb), then some Alice previously started with (A,B,Na),
+   unless a long-term key was compromised. */
+lemma auth_from_Bob:
+  "All B A Na Nb #i.
+      BobCommit(B, A, Na, Nb) @ #i
+    ==> (Ex #j. AliceStart(A, B, Na) @ #j & #j < #i)
+        | (Ex #r. RevLtk(A) @ #r)
+        | (Ex #r. RevLtk(B) @ #r)"
+
+end

@@ -1,0 +1,58 @@
+theory HKDF
+begin
+
+/* Session key derived via HKDF (RFC 5869) from an ephemeral DH secret dhZ
+   (forward secrecy) combined with a long-term PSK (implicit auth).
+   hkdf_extract/hkdf_expand are free functions - an abstract, unopinionated
+   stand-in for the real HMAC-based extract/expand steps. */
+
+builtins: diffie-hellman, hashing, symmetric-encryption
+
+functions:
+    hkdf_extract/2,   // HKDF-Extract(salt, IKM) -> PRK
+    hkdf_expand/3     // HKDF-Expand(PRK, info, L) -> OKM
+
+let Client(~psk) =
+    new ~eKc;
+    let ePKc = 'g'^~eKc in
+    out(ePKc);
+    in(ePKs);
+    let dhZ  = ePKs^~eKc in
+    let salt = h(<ePKc, ePKs>) in
+    let IKM  = <dhZ, ~psk> in
+    let PRK  = hkdf_extract(salt, IKM) in
+    let OKM  = hkdf_expand(PRK, 'session-key', '32') in
+    event SessionKey('Client', OKM);   // feeds secrecy_OKM lemma
+    new ~m;
+    event Secret(~m);                  // paired with Server's Received in executability lemma
+    out(senc(~m, OKM));
+    0
+
+let Server(~psk) =
+    in(ePKc);
+    new ~eKs;
+    let ePKs = 'g'^~eKs in
+    out(ePKs);
+    let dhZ  = ePKc^~eKs in
+    let salt = h(<ePKc, ePKs>) in
+    let IKM  = <dhZ, ~psk> in
+    let PRK  = hkdf_extract(salt, IKM) in
+    let OKM  = hkdf_expand(PRK, 'session-key', '32') in
+    event SessionKey('Server', OKM);   // feeds secrecy_OKM lemma
+    in(xencC);
+    let m = sdec(xencC, OKM) in
+    event Received(m);                 // paired with Client's Secret in executability lemma
+    0
+
+lemma executability:
+    exists-trace
+    "Ex m #i #j. Secret(m)@i & Received(m)@j & #i < #j"
+
+lemma secrecy_OKM:
+    "All role k #i. SessionKey(role, k)@i ==> not (Ex #j. K(k)@j)"
+
+process:
+    new ~psk;
+    ( !Client(~psk) | !Server(~psk) )
+
+end

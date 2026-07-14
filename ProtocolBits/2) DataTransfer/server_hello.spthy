@@ -1,0 +1,22 @@
+theory server_hello
+begin
+
+/* Server sends a ServerHello (a fresh random); Client receives it. */
+
+let Server =
+    new n;                            // server random (nonce)
+    event Create_ServerHello(n);      // mark creation of the Server Hello
+    out(n)
+
+let Client =
+    in(n);
+    event ClientReceivedHello(n)      // record receipt for exists_ServerHello lemma
+
+process:
+    ( !Server ) | ( !Client )
+
+lemma exists_ServerHello:
+exists-trace
+  " Ex n #i. ClientReceivedHello(n) @ i "
+
+end

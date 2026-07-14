@@ -1,0 +1,101 @@
+theory DH_App_Closing
+begin
+
+builtins: asymmetric-encryption, diffie-hellman, hashing, symmetric-encryption
+
+/* Roles:
+   - Client: generates a long-term asymmetric keypair (unused except for setup),
+             performs ephemeral DH, derives a symmetric session key, sends app data,
+             receives app data, and closes.
+   - Server: generates a long-term asymmetric keypair (unused except for setup),
+             performs ephemeral DH, derives a symmetric session key, receives app data,
+             sends app data, and closes.
+*/
+
+let Client() =
+    /* Long-term asymmetric key generation (public part published) */
+    new ~ltKc;
+    let pKc = pk(~ltKc) in
+    event ClientInit(pKc);
+    out(pKc);
+    /* Ephemeral DH */
+    new ~eKc;
+    let ePKc = 'g'^~eKc in
+    event ClientSentGX(ePKc);
+    out(ePKc);
+    in(ePKs);
+    event ClientRecvGY(ePKs);
+    let dhZ = ePKs^~eKc in
+    /* Derive a session key from DH shared secret and transcript context */
+    let k = h(<ePKc, ePKs, dhZ>) in
+    event SessionKey('Client', k);
+    event Derived('Client', ePKc, ePKs, k);
+    /* Application data exchange under k */
+    new mC;
+    event AppSend('Client','Server', mC);
+    out(senc(mC, k));
+    in(xencS);
+    let mS = sdec(xencS, k) in
+    event AppRecv('Client','Server', mS);
+    /* Close session */
+    event SessionClosed('Client', k);
+    0
+
+let Server() =
+    /* Long-term asymmetric key generation (public part published) */
+    new ~ltKs;
+    let pKs = pk(~ltKs) in
+    event ServerInit(pKs);
+    out(pKs);
+    /* Ephemeral DH */
+    in(ePKc);
+    event ServerRecvGX(ePKc);
+    new ~eKs;
+    let ePKs = 'g'^~eKs in
+    event ServerSentGY(ePKs);
+    out(ePKs);
+    let dhZ = ePKc^~eKs in
+    /* Derive a session key from DH shared secret and transcript context */
+    let k = h(<ePKc, ePKs, dhZ>) in
+    event SessionKey('Server', k);
+    event Derived('Server', ePKc, ePKs, k);
+    /* Application data exchange under k */
+    in(xencC);
+    let mC = sdec(xencC, k) in
+    event AppRecv('Server','Client', mC);
+    new mS;
+    event AppSend('Server','Client', mS);
+    out(senc(mS, k));
+    /* Close session */
+    event SessionClosed('Server', k);
+    0
+
+process:
+( !Client() | !Server() )
+
+/* Lemmas */
+
+/* Executability: both sides send and receive one application message under the derived key. */
+lemma executability:
+  exists-trace
+  "Ex mC mS #i #j #k #l.
+       AppSend('Client','Server', mC) @ #i
+     & AppRecv('Server','Client', mC) @ #j
+     & AppSend('Server','Client', mS) @ #k
+     & AppRecv('Client','Server', mS) @ #l
+     & #i < #j
+     & #j < #k
+     & #k < #l"
+
+/* Secrecy of the derived session key k (no key-transport or reveals are modeled). */
+lemma secrecy_session_key:
+  "All role k #i. SessionKey(role, k) @ #i ==> not (Ex #j. K(k) @ #j)"
+
+/* Deterministic key consistency: if both parties derive using the same DH shares, keys match. */
+lemma keys_match:
+  "All ePKc ePKs kc ks #i #j.
+      Derived('Client', ePKc, ePKs, kc) @ #i
+    & Derived('Server', ePKc, ePKs, ks) @ #j
+    ==> kc = ks"
+
+end

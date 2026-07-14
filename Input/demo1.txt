@@ -1,0 +1,4 @@
+The client and server generate asymmetric key pairs.
+They perform an ephemeral Diffie-Hellman exchange.
+Then they exchange application data under the derived key.
+Finally the session is closed.
