@@ -1,0 +1,201 @@
+theory QUIC_TLS13_Style
+begin
+
+builtins: diffie-hellman, hashing, symmetric-encryption
+
+functions:
+  hkdf_extract/2,
+  hkdf_expand/3
+
+/* Roles */
+let Client() =
+    /* Client ephemeral (X25519-like) keypair and DCID */
+    new sKc;
+    let pKc = 'g'^sKc in
+    new dcid;
+
+    /* Derive initial keys from DCID */
+    let salt_init = h('init-salt') in
+    let PRK0 = hkdf_extract(salt_init, dcid) in
+    let c_init = hkdf_expand(PRK0, 'client-initial', '32') in
+    let s_init = hkdf_expand(PRK0, 'server-initial', '32') in
+    let ch = <'ClientHello', pKc, dcid> in
+    event ClientInitialKeys(dcid, c_init, s_init);
+    event ClientSentClientHello(dcid, pKc);
+    /* Send DCID in clear with encrypted ClientHello payload (as in QUIC) */
+    out(<dcid, senc(ch, c_init)>);
+
+    /* Receive ServerInitial (serverHello + serverHandshake) under server_initial_key */
+    in(x_init_srv);
+    let <dcid2, xencSinit> = x_init_srv in
+    let srv_init = sdec(xencSinit, s_init) in
+    let <'ServerInitial', sh, shs> = srv_init in
+    let <'ServerHello', pKs> = sh in
+    event ClientRecvServerInitial(pKs, sh, shs);
+
+    /* Compute handshake keys from DH shared secret and transcript hash H(ch, sh) */
+    let dhZ = pKs^sKc in
+    let transcript1 = h(<ch, sh>) in
+    let PRK1 = hkdf_extract(dhZ, transcript1) in
+    let c_hs = hkdf_expand(PRK1, 'client-hs', '32') in
+    let s_hs = hkdf_expand(PRK1, 'server-hs', '32') in
+    event ClientHandshakeKeys(dhZ, c_hs, s_hs);
+
+    /* Receive server's handshake finished (cert_verify, finished) under server_handshake_key */
+    in(x_srv_fin);
+    let fin_payload = sdec(x_srv_fin, s_hs) in
+    let <'ServerFin', cert_verify, finS> = fin_payload in
+    if finS = h(<'srv-fin', dhZ, transcript1>) then
+      event ClientAccept(dhZ);
+
+      /* Send client_initial_ack + client_handshake_ack under client_handshake_key */
+      let acks = <'C-Acks', 'client-initial-ack', 'client-handshake-ack'> in
+      event ClientSentAcks(dcid);
+      out(senc(acks, c_hs));
+
+      /* Derive 1-RTT keys from shared secret and extended transcript */
+      let transcript2 = h(<ch, sh, shs, <'ServerFin', cert_verify, finS>>) in
+      let PRK2 = hkdf_extract(dhZ, transcript2) in
+      let c_1rtt = hkdf_expand(PRK2, 'client-1rtt', '32') in
+      let s_1rtt = hkdf_expand(PRK2, 'server-1rtt', '32') in
+      event Client1RTTKeys(dhZ, c_1rtt, s_1rtt);
+
+      /* Send client_handshake_confirmation (under c_hs) and client_ping (under c_1rtt) */
+      let hs_conf_c = <'C-HS-Conf'> in
+      let ping = <'C-Ping'> in
+      event ClientSentPing();
+      out(<senc(hs_conf_c, c_hs), senc(ping, c_1rtt)>);
+
+      /* Receive server_handshake_confirmation (under s_hs) and server_pong (under s_1rtt) */
+      in(x_srv_mix);
+      let <xhs_srv_conf, xpong> = x_srv_mix in
+      let hs_conf_s = sdec(xhs_srv_conf, s_hs) in
+      let pong = sdec(xpong, s_1rtt) in
+      event ClientRecvPong(pong);
+
+      /* Send data_ack under client_1rtt_key (migrated to regular channel abstracted by event) */
+      let data_ack = <'C-Data-Ack'> in
+      event ClientSentDataAck();
+      out(senc(data_ack, c_1rtt));
+
+      /* Receive server_close_connection under client_1rtt_key via regular channel */
+      in(x_close);
+      let close = sdec(x_close, c_1rtt) in
+      if close = <'S-Close'> then
+        event ClientClosed(dhZ)
+      else 0
+    else 0
+
+
+let Server() =
+    /* Receive ClientHello with DCID in clear and payload under client_initial_key */
+    in(x_cli_init);
+    let <dcid, xenc_ch> = x_cli_init in
+
+    /* Derive initial keys from DCID */
+    let salt_init = h('init-salt') in
+    let PRK0 = hkdf_extract(salt_init, dcid) in
+    let c_init = hkdf_expand(PRK0, 'client-initial', '32') in
+    let s_init = hkdf_expand(PRK0, 'server-initial', '32') in
+    event ServerInitialKeys(dcid, c_init, s_init);
+
+    /* Decrypt ClientHello and extract client's DH public share */
+    let ch = sdec(xenc_ch, c_init) in
+    let <'ClientHello', pKc, =dcid> = ch in
+
+    /* Generate server ephemeral (X25519-like) keypair */
+    new sKs;
+    let pKs = 'g'^sKs in
+
+    /* Compose ServerHello and ServerHandshake (with certificate abstracted) */
+    let sh = <'ServerHello', pKs> in
+    new cert;
+    let shs = <'ServerHandshake', cert> in
+
+    /* Send ServerInitial (serverHello + serverHandshake) under server_initial_key */
+    let srv_init_msg = <'ServerInitial', sh, shs> in
+    event ServerSentInitial(sh, shs);
+    out(<dcid, senc(srv_init_msg, s_init)>);
+
+    /* Compute handshake keys from DH shared secret and transcript hash H(ch, sh) */
+    let dhZ = pKc^sKs in
+    let transcript1 = h(<ch, sh>) in
+    let PRK1 = hkdf_extract(dhZ, transcript1) in
+    let c_hs = hkdf_expand(PRK1, 'client-hs', '32') in
+    let s_hs = hkdf_expand(PRK1, 'server-hs', '32') in
+    event ServerHandshakeKeys(dhZ, c_hs, s_hs);
+
+    /* Send certificate_verify and serverHandshake_finished under server_handshake_key */
+    let cert_verify = h(<'cert-verify', cert, transcript1>) in
+    let finS = h(<'srv-fin', dhZ, transcript1>) in
+    event ServerSentFin(dhZ);
+    out(senc(<'ServerFin', cert_verify, finS>, s_hs));
+
+    /* Receive client's acks under client_handshake_key */
+    in(x_client_acks);
+    let acks = sdec(x_client_acks, c_hs) in
+    let <'C-Acks', 'client-initial-ack', 'client-handshake-ack'> = acks in
+    event ServerAccept(dhZ);
+
+    /* Derive 1-RTT keys from shared secret and extended transcript */
+    let transcript2 = h(<ch, sh, shs, <'ServerFin', cert_verify, finS>>) in
+    let PRK2 = hkdf_extract(dhZ, transcript2) in
+    let c_1rtt = hkdf_expand(PRK2, 'client-1rtt', '32') in
+    let s_1rtt = hkdf_expand(PRK2, 'server-1rtt', '32') in
+    event Server1RTTKeys(dhZ, c_1rtt, s_1rtt);
+
+    /* Receive client_handshake_confirmation (under c_hs) and client_ping (under c_1rtt);
+       then send server_handshake_confirmation and server_pong */
+    in(x_cli_mix);
+    let <xhs_conf, xping> = x_cli_mix in
+    let hs_conf_c = sdec(xhs_conf, c_hs) in
+    let ping = sdec(xping, c_1rtt) in
+    event ServerRecvPing(ping);
+    let hs_conf_s = <'S-HS-Conf'> in
+    let srv_pong = <'S-Pong'> in
+    event ServerSentPong();
+    out(<senc(hs_conf_s, s_hs), senc(srv_pong, s_1rtt)>);
+
+    /* Receive data_ack under client_1rtt_key (migration to regular channel abstracted by event),
+       then send close under client_1rtt_key (as per description) */
+    in(x_ack);
+    let data_ack = sdec(x_ack, c_1rtt) in
+    event ServerRecvDataAck();
+    out(senc(<'S-Close'>, c_1rtt));
+    event ServerClosed(dhZ)
+
+
+/* Composition */
+process:
+( !Client() | !Server() )
+
+
+/* Lemmas */
+
+lemma executability:
+  exists-trace
+  "Ex z #i #j.
+     ClientClosed(z) @ i
+   & ServerClosed(z) @ j"
+
+lemma server_finish_auth:
+  "All z #i.
+     ClientAccept(z) @ i
+     ==> (Ex #j. ServerSentFin(z) @ j & j < i)"
+
+lemma secrecy_dh_shared_secret:
+  "All z #i.
+     ClientAccept(z) @ i
+     ==> not (Ex #j. K(z) @ j)"
+
+lemma secrecy_client_1rtt_key:
+  "All z kc ks #i.
+     Client1RTTKeys(z, kc, ks) @ i
+     ==> not (Ex #j. K(kc) @ j)"
+
+lemma secrecy_server_1rtt_key:
+  "All z kc ks #i.
+     Client1RTTKeys(z, kc, ks) @ i
+     ==> not (Ex #j. K(ks) @ j)"
+
+end

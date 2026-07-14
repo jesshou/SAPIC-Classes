@@ -1,0 +1,72 @@
+theory QUIC_ClientHello
+begin
+
+builtins: diffie-hellman, hashing, symmetric-encryption
+
+functions:
+    HKDF/2,
+    KeyExp/0,
+    client_label/0,
+    server_label/0
+
+// ClientSetup: derives initial and handshake keys, sends ClientHello and ACKs.
+// Performs DH with server's key from ServerHello, verifies and transitions to 1-RTT.
+// Emits ClientInitialKeysGenerated to mark initial key derivation.
+let ClientSetup =
+    new sKc;
+    let pKc = 'g'^sKc in
+    new DCID;
+    let initial_secret = HKDF(DCID, 'quic_v1_initial_salt') in
+    let client_initial_key = HKDF(initial_secret, client_label) in
+    let server_initial_key = HKDF(initial_secret, server_label) in
+    event ClientInitialKeysGenerated(pKc, DCID, client_initial_key, server_initial_key);
+    let ClientHello = senc(<pKc, DCID>, client_initial_key) in
+    out(<DCID, ClientHello>);
+    in(ServerHello);
+    let <pKs, =DCID> = sdec(ServerHello, server_initial_key) in
+    let TLS_shared_secret = pKs^sKc in
+    let handshake_secret = HKDF(TLS_shared_secret, h(<ClientHello, ServerHello>)) in
+    let client_handshake_key = HKDF(handshake_secret, client_label) in
+    let server_handshake_key = HKDF(handshake_secret, server_label) in
+    let client_initial_ack = senc('initial_ack', client_handshake_key) in
+    let client_handshake_ack = senc('handshake_ack', client_handshake_key) in
+    out(client_initial_ack);
+    out(client_handshake_ack);
+    in(server_handshake_finished_msg);
+    let <certificate_verify, server_handshake_finished> = sdec(server_handshake_finished_msg, server_handshake_key) in
+    let client_1rtt_key = HKDF(TLS_shared_secret, h(<ClientHello, ServerHello, server_handshake_key, server_handshake_finished>)) in
+    let client_handshake_confirmation = senc('handshake_confirmed', client_1rtt_key) in
+    out(client_handshake_confirmation);
+    let data_ack = senc('data_ack', client_1rtt_key) in
+    out(data_ack)
+
+// ServerSetup: mirrors client, derives initial and handshake keys, sends ServerHello.
+// Sends server_handshake_finished_msg and confirmation, derives 1-RTT keys.
+// Binds DCID and pKc via decryption before use.
+let ServerSetup =
+    new sKs;
+    let pKs = 'g'^sKs in
+    in(<DCID, ClientHello>);
+    let initial_secret = HKDF(DCID, 'quic_v1_initial_salt') in
+    let client_initial_key = HKDF(initial_secret, client_label) in
+    let server_initial_key = HKDF(initial_secret, server_label) in
+    let <pKc, =DCID> = sdec(ClientHello, client_initial_key) in
+    let ServerHello = senc(<pKs, DCID>, server_initial_key) in
+    out(ServerHello);
+    let TLS_shared_secret = pKc^sKs in
+    let handshake_secret = HKDF(TLS_shared_secret, h(<ClientHello, ServerHello>)) in
+    let client_handshake_key = HKDF(handshake_secret, client_label) in
+    let server_handshake_key = HKDF(handshake_secret, server_label) in
+    new certificate_verify;
+    new server_handshake_finished;
+    let server_1rtt_key = HKDF(TLS_shared_secret, h(<ClientHello, ServerHello, server_handshake_key, server_handshake_finished>)) in
+    let client_1rtt_key = HKDF(TLS_shared_secret, h(<ClientHello, ServerHello, server_handshake_key, server_handshake_finished>)) in
+    let server_handshake_finished_msg = senc(<certificate_verify, server_handshake_finished>, server_handshake_key) in
+    out(server_handshake_finished_msg);
+    let server_handshake_confirmation = senc('handshake_confirmed', server_1rtt_key) in
+    out(server_handshake_confirmation)
+
+process:
+    ! ClientSetup | ! ServerSetup
+
+end

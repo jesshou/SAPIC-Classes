@@ -1,0 +1,71 @@
+theory AliceBob_Auth_Enc
+begin
+
+builtins: hashing, asymmetric-encryption, signing
+
+/* Alice (initiator) */
+let Alice(skA, pkA, pkB) =
+    event Role_A(skA);
+    new ta;
+    new na;
+    new xa;
+    new Ya;
+    let m   = <ta, na, pkB, xa, aenc(Ya, pkB)> in
+    let ha  = h(m) in
+    let msg = <pkA, m, sign(ha, skA)> in
+    event Running_A(pkA, pkB, <'A','B', xa, Ya>);
+    event SecretA(pkA, pkB, Ya);
+    event Out_A_1(msg);
+    out(msg);
+    0
+
+/* Bob (responder) */
+let Bob(skB, pkB, pkA) =
+    event Role_B(skB);
+    in(cipher);
+    let <=pkA, m, sig> = cipher in
+    let <ta, na, =pkB, xa, cipher> = m in
+    let Ya = adec(cipher, skB) in
+    let ha = h(m) in
+    if verify(sig, ha, pkA) = true then
+        event Commit_B(pkA, pkB, <'A','B', xa, Ya>);
+        event Secret(pkA, pkB, Ya)
+    // no else-branch
+    // end of Bob
+  
+
+process:
+    new skA; let pkA = pk(skA) in
+    new skB; let pkB = pk(skB) in
+    out(pkA); out(pkB);
+    ( !Alice(skA, pkA, pkB) | !Bob(skB, pkB, pkA) )
+
+/* Lemmas */
+
+/* Executability: there is a trace where Alice sends her message and Bob commits */
+lemma executability:
+  exists-trace
+  "Ex pkA pkB msg xa Ya #i #j.
+       Out_A_1(msg) @ #i
+     & Commit_B(pkA, pkB, <'A','B', xa, Ya>) @ #j
+     & #i < #j"
+
+/* Secrecy of Ya from Alice's claim */
+lemma secrecy_Ya_from_A:
+  "All pkA pkB Ya #i.
+      SecretA(pkA, pkB, Ya) @ #i
+      ==> not (Ex #j. K(Ya) @ #j)"
+
+/* Secrecy of Ya from Bob's claim */
+lemma secrecy_Ya_from_B:
+  "All pkA pkB Ya #i.
+      Secret(pkA, pkB, Ya) @ #i
+      ==> not (Ex #j. K(Ya) @ #j)"
+
+/* Authentication (non-injective agreement): Bob's commit implies Alice previously ran with same data */
+lemma noninjective_agreement_B:
+  "All pkA pkB xa Ya #i.
+      Commit_B(pkA, pkB, <'A','B', xa, Ya>) @ #i
+      ==> (Ex #j. Running_A(pkA, pkB, <'A','B', xa, Ya>) @ #j & #j < #i)"
+
+end
